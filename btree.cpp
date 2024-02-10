@@ -32,4 +32,7 @@ class BPTree {
         No* getraiz(){
             return this->raiz;
         }
+        void deleteBPTree(BPTree tree){
+            
+        }
 };
