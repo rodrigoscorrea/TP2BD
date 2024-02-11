@@ -1,251 +1,805 @@
-#include <bits/stdc++.h>
-using namespace std;
-#define max 3
+#ifndef BPlusTree_H
+#define BPlusTree_H
 
+#include <iostream>
 
-class bptree; 
-class node{
-    bool folha;
-    int *chave, tamanho;
-    node **ponteiro;
-    friend class bptree;
+template <typename T>
+struct Node {
+    bool is_leaf;
+    std::size_t degree; // maximum number of children
+    std::size_t size; // current number of item
+    T* item;
+    Node<T>** children;
+    Node<T>* parent;
 
-    public:
-        node();
+public:
+    Node(std::size_t _degree) {// Constructor
+        this->is_leaf = false;
+        this->degree = _degree;
+        this->size = 0;
+
+        T* _item = new T[degree-1];
+        for(int i=0; i<degree-1; i++){
+            _item[i] = 0;
+        }
+        this->item = _item;
+
+        Node<T>** _children = new Node<T>*[degree];
+        for(int i=0; i<degree; i++){
+            _children[i] = nullptr;
+        }
+        this->children = _children;
+
+        this->parent = nullptr;
+
+    }
 };
 
-class bptree{
-    node *raiz;
-    void inserir_interno(int, node* , node*);
-    void remover_interno(int, node*, node* );
-    node *achar_pai(node*, node*);
-    public: 
-        bptree();
-        void busca_arvore(int);
-        void inserir_arvore(int);
-        void remover_arvore(int);
-        void imprimir_arvore(node*);
-        node* get_raiz();
+struct RegistroBPT{
+    int chave, valor;
+
+    RegistroBPT(int chave, int valor){ //Construtor para operações
+        this->chave = chave;
+        this->valor = valor;
+    }
+
+    RegistroBPT(){ //Construtor para inicializações
+        this->chave = 0;
+        this->valor = 0;
+    }
 };
 
-node::node(){
-    chave = new int[max];
-    ponteiro = new node *[max + 1];
+template <typename T>
+class BPlusTree {
+    Node<T>* root;
+    std::size_t degree;
 
-}
+public:
+    BPlusTree(std::size_t _degree) {// Constructor
+        this->root = nullptr;
+        this->degree = _degree;
+    }
+    ~BPlusTree() { // Destructor
+        clear(this->root);
+    }
 
-bptree::bptree(){
-    raiz = NULL;
-}
+    Node<T>* getroot(){
+        return this->root;
+    }
 
-void bptree::inserir_arvore(int x){
-    if(raiz == NULL){
-        raiz = new node;
-        raiz -> chave[0] = x;
-        raiz -> folha = true;
-        raiz -> tamanho = 1;
-    } else {
-        node *cursor = raiz;
-        node *pai;
-        while(cursor -> folha == false){
-            pai = cursor;
-            for(int i = 0; i < cursor -> tamanho; i++){
-                if(x < cursor ->chave[i]){
-                    cursor = cursor -> ponteiro[i];
-                    break;
-                }
-                if(i == cursor -> tamanho-1){
-                    cursor = cursor->ponteiro[i+1];
-                    break;
-                }
-            }
+    Node<T>* BPlusTreeSearch(Node<T>* node, T key){
+        if(node == nullptr) { // if root is null, return nullptr
+            return nullptr;
         }
-        if (cursor->tamanho < max){
-            int i = 0;
-            while(x > cursor -> chave[i] && i<cursor->tamanho)
-            i++;
-            for(int j = cursor -> tamanho; j > i; j--){
-                cursor->chave[j] = cursor->chave[j-1];
-            }
-            cursor->chave[i] = x;
-            cursor->tamanho++;
-            cursor->ponteiro[cursor->tamanho] = cursor->ponteiro[cursor->tamanho-1];
-            cursor->ponteiro[cursor->tamanho-1] = NULL;
-        } else {
-            node *nova_folha = new node;
-            int no_virtual[max+1];
-            for(int i = 0; i < max; i++){
-                no_virtual[i] = cursor->chave[i];
-            }
-            int i = 0, j;
-            while(x > no_virtual[i] && i < max)
-            i++;
-            for(int j = max + 1; j > i; j--){
-                no_virtual[j] = no_virtual[j-1];
-            }
-            no_virtual[i] = x;
-            nova_folha->folha = true;
-            cursor->tamanho=(max+1)/2;
-            nova_folha->tamanho = max+1-(max+1)/2;
-            cursor->ponteiro[cursor->tamanho] = nova_folha;
-            nova_folha->ponteiro[nova_folha->tamanho] = cursor->ponteiro[max];
-        }
-    }
-}
+        else{
+            Node<T>* cursor = node; // cursor finding key
 
-void bptree::inserir_interno(int x, node* cursor, node* filho){
-    if(cursor -> tamanho < max){
-        int i = 0;
-        while (x > cursor->chave[i] && i<cursor->tamanho)
-        i++;
-        for(int j = cursor->tamanho;j > i ; j--){
-            cursor -> chave[j] = cursor->chave[j - 1];
-        }
-        cursor-> chave[i] = x;
-        cursor->tamanho++;
-        cursor->ponteiro[i+1] = filho;
-    } else {
-        node* novo_no_interno = new node;
-        int chave_virtual[max+1];
-        //node* chave_virtual_no[max+1];
-        node* ponteiro_virtual[max+2];
-        for(int i = 0; i < max; i++){
-            chave_virtual[i] = cursor -> chave[i];
-        }
-        for(int i = 0; i < max+1; i++){
-            ponteiro_virtual[i] = cursor -> ponteiro[i];
-        }
-    }
-}
-
-node* bptree::achar_pai(node* cursor, node* filho){
-    node* pai;
-    if (cursor -> folha || (cursor->ponteiro[0]) -> folha) {
-        return NULL; //Raiz não tem pai
-    }
-
-    for(int i = 0; i < (cursor->tamanho+1); i++){
-        if(cursor -> ponteiro[i] == filho){
-            pai = cursor;
-            return pai;
-        } else {
-            pai = achar_pai(cursor->ponteiro[i], filho);
-            if (pai != NULL){
-                return pai;
-            }
-        } 
-    }
-    return pai;
-}
-void bptree::remover_interno(int x, node* cursor, node* filho) {
-    int pos;
-    for (pos = 0; pos < cursor->tamanho; pos++) {
-        if (cursor->chave[pos] == x) {
-            break;
-        }
-    }
-
-    for (int i = pos; i < cursor->tamanho - 1; i++) {
-        cursor->chave[i] = cursor->chave[i + 1];
-    }
-
-    for (int i = pos + 1; i < cursor->tamanho; i++) {
-        cursor->ponteiro[i] = cursor->ponteiro[i + 1];
-    }
-
-    cursor->tamanho--;
-
-    /* if (cursor->tamanho < (max + 1) / 2) {
-        // Reorganizar a árvore se o número de chaves ficar abaixo do mínimo permitido
-        // (nesse ponto, a redistribuição ou a fusão de nós podem ser necessárias)
-        // Implementação de reorganização não incluída nesta resposta
-    } */
-}
-void bptree::remover_arvore(int x){
-    if(raiz == NULL){
-        cout<<"arvore esta vazia";
-    } else {
-        node* cursor = raiz;
-        node* pai;
-        int irmao_esquerda, irmao_direita;
-        while(cursor->folha == false){
-            for(int i = 0; i < cursor->tamanho; i++){
-                pai = cursor;
-                irmao_esquerda = i-1;
-                irmao_direita = i+1;
-                if(x < cursor->chave[i]){
-                    cursor = cursor->ponteiro[i];
-                    break;
-                }
-                if(i == cursor->tamanho-1){
-                    irmao_esquerda = i;
-                    irmao_direita = i+2;
-                    cursor = cursor->ponteiro[i+1];
-                    break;
+            while(!cursor->is_leaf){ // until cusor pointer arrive leaf
+                for(int i=0; i<cursor->size; i++){ //in this index node, find what we want key
+                    if(key < cursor->item[i]){ //find some range, and let find their child also.
+                        cursor = cursor->children[i];
+                        break;
+                    }
+                    if(i == (cursor->size)-1){
+                        cursor = cursor->children[i+1];
+                        break;
+                    }
                 }
             }
+
+            //search for the key if it exists in leaf node.
+            for(int i=0; i<cursor->size; i++){
+                if(cursor->item[i] == key){
+                    return cursor;
+                }
+            }
+
+            return nullptr;
         }
-        bool achado = false;
-        int pos;
-        for(pos = 0; pos < cursor -> tamanho; pos++){
-            if(cursor->chave[pos] == x){
-                achado = true;
+    }
+    Node<T>* BPlusTreeRangeSearch(Node<T>* node, T key){
+        if(node == nullptr) { // if root is null, return nullptr
+            return nullptr;
+        }
+        else{
+            Node<T>* cursor = node; // cursor finding key
+
+            while(!cursor->is_leaf){ // until cusor pointer arrive leaf
+                for(int i=0; i<cursor->size; i++){ //in this index node, find what we want key
+                    if(key < cursor->item[i]){ //find some range, and let find their child also.
+                        cursor = cursor->children[i];
+                        break;
+                    }
+                    if(i == (cursor->size)-1){
+                        cursor = cursor->children[i+1];
+                        break;
+                    }
+                }
+            }
+            return cursor;
+        }
+    }
+    int range_search(T start, T end, T* result_data, int arr_length) {
+        int index=0;
+
+        Node<T>* start_node = BPlusTreeRangeSearch(this->root,start);
+        Node<T>* cursor = start_node;
+        T temp= cursor->item[0];
+
+        while(temp<=end){
+            if(cursor == nullptr){
+                break;
+            }
+            for(int i=0; i< cursor->size;i++){
+                temp = cursor->item[i];
+                if((temp >= start)&&(temp <= end)){
+                    result_data[index] = temp;
+                    index++;
+                }
+            }
+            cursor = cursor->children[cursor->size];
+        }
+        return index;
+    }
+    bool search(T data) {  // Return true if the item exists. Return false if it does not.
+        return BPlusTreeSearch(this->root, data) != nullptr;
+    }
+
+    int find_index(T* arr, T data, int len){
+        int index = 0;
+        for(int i=0; i<len; i++){
+            if(data < arr[i]){
+                index = i;
+                break;
+            }
+            if(i==len-1){
+                index = len;
                 break;
             }
         }
-        if(!achado){
-            cout<<"nao foi achado\n";
-            return;
-        }
-        if(cursor -> tamanho == 0){
-            cout<<"arvore morreu\n";
-            delete[] cursor->chave;
-            delete[] cursor->ponteiro;
-            delete[] cursor;
-            raiz = NULL;  
-        }
-        //return;
-        node* no_direita = cursor->ponteiro[irmao_direita];
-        for(int i = cursor -> tamanho, j =0; j< no_direita -> tamanho; i++,j++){
-            cursor->chave[i] = no_direita->chave[j];
-        }
-        cursor->ponteiro[cursor->tamanho] = NULL;
-        cout<<"agrupando dois nos folhas\n";
-        remover_interno(pai->chave[irmao_direita-1], pai, no_direita);
-        delete[] no_direita->chave;
-        delete[] no_direita->ponteiro;
-        delete[] no_direita;
+        return index;
     }
-}
-
-void bptree::imprimir_arvore(node* cursor){
-    if(cursor != NULL){
-        for(int i = 0; i < cursor->tamanho; i++){
-            cout<<cursor->chave[i]<<" ";
+    T* item_insert(T* arr, T data, int len){
+        int index = 0;
+        for(int i=0; i<len; i++){
+            if(data < arr[i]){
+                index = i;
+                break;
+            }
+            if(i==len-1){
+                index = len;
+                break;
+            }
         }
-        cout<<endl;
-        if(cursor->folha != true){
-            for(int i=0; i< cursor->tamanho;i++){
-                imprimir_arvore(cursor->ponteiro[i]);
+
+        for(int i = len; i > index; i--){
+            arr[i] = arr[i-1];
+        }
+
+        arr[index] = data;
+
+        return arr;
+    }
+    Node<T>** child_insert(Node<T>** child_arr, Node<T>*child,int len,int index){
+        for(int i= len; i > index; i--){
+            child_arr[i] = child_arr[i - 1];
+        }
+        child_arr[index] = child;
+        return child_arr;
+    }
+    Node<T>* child_item_insert(Node<T>* node, T data, Node<T>* child){
+        int item_index=0;
+        int child_index=0;
+        for(int i=0; i< node->size; i++){
+            if(data < node->item[i]){
+                item_index = i;
+                child_index = i+1;
+                break;
+            }
+            if(i==node->size-1){
+                item_index = node->size;
+                child_index = node->size+1;
+                break;
+            }
+        }
+        for(int i = node->size;i > item_index; i--){
+            node->item[i] = node->item[i-1];
+        }
+        for(int i=node->size+1;i>child_index;i--){
+            node->children[i] = node->children[i-1];
+        }
+
+        node->item[item_index] = data;
+        node->children[child_index] = child;
+
+        return node;
+    }
+    void InsertPar(Node<T>* par,Node<T>* child, T data){
+        //overflow check
+        Node<T>* cursor = par;
+        if(cursor->size < this->degree-1){//not overflow, just insert in the correct position
+            //insert item, child, and reallocate
+            cursor = child_item_insert(cursor,data,child);
+            cursor->size++;
+        }
+        else{//overflow
+            //make new node
+            auto* Newnode = new Node<T>(this->degree);
+            Newnode->parent = cursor->parent;
+
+            //copy item
+            T* item_copy = new T[cursor->size+1];
+            for(int i=0; i<cursor->size; i++){
+                item_copy[i] = cursor->item[i];
+            }
+            item_copy = item_insert(item_copy,data,cursor->size);
+
+            auto** child_copy = new Node<T>*[cursor->size+2];
+            for(int i=0; i<cursor->size+1;i++){
+                child_copy[i] = cursor->children[i];
+            }
+            child_copy[cursor->size+1] = nullptr;
+            child_copy = child_insert(child_copy,child,cursor->size+1,find_index(item_copy,data,cursor->size+1));
+
+            //split nodes
+            cursor->size = (this->degree)/2;
+            if((this->degree) % 2 == 0){
+                Newnode->size = (this->degree) / 2 -1;
+            }
+            else{
+                Newnode->size = (this->degree) / 2;
+            }
+
+            for(int i=0; i<cursor->size;i++){
+                cursor->item[i] = item_copy[i];
+                cursor->children[i] = child_copy[i];
+            }
+            cursor->children[cursor->size] = child_copy[cursor->size];
+            //todo 안지워짐. 뒤에것.
+
+            for(int i=0; i < Newnode->size; i++){
+                Newnode->item[i] = item_copy[cursor->size + i +1];
+                Newnode->children[i] = child_copy[cursor->size+i+1];
+                Newnode->children[i]->parent=Newnode;
+            }
+            Newnode->children[Newnode->size] = child_copy[cursor->size+Newnode->size+1];
+            Newnode->children[Newnode->size]->parent=Newnode;
+
+            T paritem = item_copy[this->degree/2];
+
+            delete[] item_copy;
+            delete[] child_copy;
+
+            //parent check
+            if(cursor->parent == nullptr){//if there are no parent node(root case)
+                auto* Newparent = new Node<T>(this->degree);
+                cursor->parent = Newparent;
+                Newnode->parent = Newparent;
+
+                Newparent->item[0] = paritem;
+                Newparent->size++;
+
+                Newparent->children[0] = cursor;
+                Newparent->children[1] = Newnode;
+
+                this->root = Newparent;
+
+                //delete Newparent;
+            }
+            else{//if there already have parent node
+                InsertPar(cursor->parent, Newnode, paritem);
             }
         }
     }
-}
+    void insert(T data) {
+        if(this->root == nullptr){ //if the tree is empty
+            this->root = new Node<T>(this->degree);
+            this->root->is_leaf = true;
+            this->root->item[0] = data;
+            this->root->size = 1; //
+        }
+        else{ //if the tree has at least one node
+            Node<T>* cursor = this->root;
 
-node *bptree::get_raiz(){
-    return raiz;
-}
+            //move to leaf node
+            cursor = BPlusTreeRangeSearch(cursor, data);
+
+            //overflow check
+            if(cursor->size < (this->degree-1)){ // not overflow, just insert in the correct position
+                //item insert and rearrange
+                cursor->item = item_insert(cursor->item,data,cursor->size);
+                cursor->size++;
+                //edit pointer(next node)
+                cursor->children[cursor->size] = cursor->children[cursor->size-1];
+                cursor->children[cursor->size-1] = nullptr;
+            }
+            else{//overflow case
+                //make new node
+                auto* Newnode = new Node<T>(this->degree);
+                Newnode->is_leaf = true;
+                Newnode->parent = cursor->parent;
+
+                //copy item
+                T* item_copy = new T[cursor->size+1];
+                for(int i=0; i<cursor->size; i++){
+                    item_copy[i] = cursor->item[i];
+                }
+
+                //insert and rearrange
+                item_copy = item_insert(item_copy,data,cursor->size);
+
+                //split nodes
+                cursor->size = (this->degree)/2;
+                if((this->degree) % 2 == 0){
+                    Newnode->size = (this->degree) / 2;
+                }
+                else{
+                    Newnode->size = (this->degree) / 2 + 1;
+                }
+
+                for(int i=0; i<cursor->size;i++){
+                    cursor->item[i] = item_copy[i];
+                }
+                for(int i=0; i < Newnode->size; i++){
+                    Newnode->item[i] = item_copy[cursor->size + i];
+                }
+
+                cursor->children[cursor->size] = Newnode;
+                Newnode->children[Newnode->size] = cursor->children[this->degree-1];
+                cursor->children[this->degree-1] = nullptr;
+
+                delete[] item_copy;
+
+                //parent check
+                T paritem = Newnode->item[0];
+
+                if(cursor->parent == nullptr){//if there are no parent node(root case)
+                    auto* Newparent = new Node<T>(this->degree);
+                    cursor->parent = Newparent;
+                    Newnode->parent = Newparent;
+
+                    Newparent->item[0] = paritem;
+                    Newparent->size++;
+
+                    Newparent->children[0] = cursor;
+                    Newparent->children[1] = Newnode;
+
+                    this->root = Newparent;
+                }
+                else{//if there already have parent node
+                    InsertPar(cursor->parent, Newnode, paritem);
+                }
+            }
+        }
+    }
+
+    void remove(T data) { // Remove an item from the tree.
+        //make cursor
+        Node<T>* cursor = this->root;
+
+        //move to leaf node
+        cursor = BPlusTreeRangeSearch(cursor,data);
+
+        //make sibling index
+        int sib_index =-1;
+        for(int i=0; i<cursor->parent->size+1;i++){
+            if(cursor == cursor->parent->children[i]){
+                sib_index = i;
+            }
+        }
+        int left=sib_index-1;
+        int right=sib_index+1;
+
+
+        //find data
+        int del_index=-1;
+        for(int i=0; i< cursor->size; i++){
+            if(cursor->item[i] == data){
+                del_index = i;
+                break;
+            }
+        }
+        //if data dosen't exist, nothing happen
+        if(del_index==-1){
+            return; // there is no match remove value
+        }
+
+        //remove data
+        for(int i=del_index; i<cursor->size-1;i++){
+            cursor->item[i] = cursor->item[i+1];
+        }
+        cursor->item[cursor->size-1] = 0;
+        cursor->size--;
+
+        //if cursor is root, and there are no more data -> clean!
+        if(cursor == this->root && cursor->size==0){//root case
+            clear(this->root);
+            this->root = nullptr;
+            return;
+        }
+        cursor->children[cursor->size] = cursor->children[cursor->size+1];
+        cursor->children[cursor->size+1] = nullptr;
+
+
+        //underflow check
+        if(cursor == this->root){
+            return;
+        }
+        if(cursor->size < degree/2){//underflow case
+
+            if(left >= 0){// left_sibiling exists
+                Node<T>* leftsibling= cursor->parent->children[left];
+
+                if(leftsibling->size > degree/2){ //if data number is enough to use this node
+                    T* temp = new T[cursor->size+1];
+
+                    //copy item
+                    for(int i=0; i<cursor->size; i++){
+                        temp[i]=cursor->item[i];
+                    }
+
+                    //insert and rearrange
+                    item_insert(temp,leftsibling->item[leftsibling->size -1],cursor->size);
+                    for(int i=0; i<cursor->size+1; i++){
+                        cursor->item[i] = temp[i];
+                    }
+                    cursor->size++;
+                    delete[] temp;
+
+                    //pointer edit
+                    cursor->children[cursor->size] = cursor->children[cursor->size-1];
+                    cursor->children[cursor->size-1] = nullptr;
+
+                    //sibling property edit
+                    leftsibling->item[leftsibling->size-1] = 0;
+                    leftsibling->size--;
+                    leftsibling->children[leftsibling->size] = leftsibling->children[leftsibling->size+1]; //cursor
+                    leftsibling->children[leftsibling->size+1]= nullptr;
+
+                    //parent property edit
+                    cursor->parent->item[left] = cursor->item[0];
+
+                    return;
+                }
+            }
+            if(right <= cursor->parent->size){// right_sibiling exists
+                Node<T>* rightsibling = cursor->parent->children[right];
+
+                if(rightsibling->size >degree/2){//if data number is enough to use this node
+                    T* temp = new T[cursor->size+1];
+
+                    //copy item
+                    for(int i=0; i<cursor->size; i++){
+                        temp[i]=cursor->item[i];
+                    }
+                    //insert and rearrange
+                    item_insert(temp,rightsibling->item[0],cursor->size);
+                    for(int i=0; i<cursor->size+1; i++){
+                        cursor->item[i] = temp[i];
+                    }
+                    cursor->size++;
+                    delete[] temp;
+
+                    //pointer edit
+                    cursor->children[cursor->size] = cursor->children[cursor->size-1];
+                    cursor->children[cursor->size-1] = nullptr;
+
+                    //sibling property edit
+                    for(int i=0; i<rightsibling->size-1;i++){
+                        rightsibling->item[i] = rightsibling->item[i+1];
+                    }
+                    rightsibling->item[rightsibling->size-1] = 0;
+                    rightsibling->size--;
+                    rightsibling->children[rightsibling->size] = rightsibling->children[rightsibling->size+1]; //cursor
+                    rightsibling->children[rightsibling->size+1]= nullptr;
+
+                    //parent property edit
+                    cursor->parent->item[right-1] = rightsibling->item[0];
+
+                    return;
+                }
+            }
+
+            //if sibling is not enought to use their data
+            //we have to merge step
+
+            if(left>=0){ // left_sibling exists
+                Node<T>* leftsibling = cursor->parent->children[left];
+
+                //merge two leaf node
+                for(int i=0; i<cursor->size; i++){
+                    leftsibling->item[leftsibling->size+i]=cursor->item[i];
+                }
+                //edit pointer
+                leftsibling->children[leftsibling->size] = nullptr;
+                leftsibling->size = leftsibling->size+cursor->size;
+                leftsibling->children[leftsibling->size] = cursor->children[cursor->size];
+
+                //parent property edit
+                Removepar(cursor, left, cursor->parent);
+                for(int i=0; i<cursor->size;i++){
+                    cursor->item[i]=0;
+                    cursor->children[i] = nullptr;
+                }
+                cursor->children[cursor->size] = nullptr;
+
+                delete[] cursor->item;
+                delete[] cursor->children;
+                delete cursor;
+
+                return;
+
+            }
+            if(right<=cursor->parent->size){ // right_sibiling exists
+                Node<T>* rightsibling = cursor->parent->children[right];
+
+                //merge two leaf node
+                for(int i=0; i<rightsibling->size; i++){
+                    cursor->item[i+cursor->size]=rightsibling->item[i];
+                }
+                //edit pointer
+                cursor->children[cursor->size] = nullptr;
+                cursor->size = rightsibling->size+cursor->size;
+                cursor->children[cursor->size] = rightsibling->children[rightsibling->size];
+
+                //parent property edit
+                Removepar(rightsibling, right-1, cursor->parent);
+
+                for(int i=0; i<rightsibling->size;i++){
+                    rightsibling->item[i]=0;
+                    rightsibling->children[i] = nullptr;
+                }
+                rightsibling->children[rightsibling->size] = nullptr;
+
+                delete[] rightsibling->item;
+                delete[] rightsibling->children;
+                delete rightsibling;
+                return;
+
+            }
+
+        }
+        else{
+            return;
+        }
+    }
+
+    void Removepar(Node<T>* node, int index, Node<T>* par){
+        Node<T>* remover = node;
+        Node<T>* cursor = par;
+        T target = cursor->item[index];
+
+        //if cursor is root, and there are no more data -> child node is to be root!
+        if(cursor == this->root && cursor->size==1){//root case
+            if(remover == cursor->children[0]){
+                delete[] remover->item;
+                delete[] remover->children;
+                delete remover;
+                this->root = cursor->children[1];
+                delete[] cursor->item;
+                delete[] cursor->children;
+                delete cursor;
+                return;
+            }
+            if(remover == cursor->children[1]){
+                delete[] remover->item;
+                delete[] remover->children;
+                delete remover;
+                this->root = cursor->children[0];
+                delete[] cursor->item;
+                delete[] cursor->children;
+                delete cursor;
+                return;
+            }
+        }
+
+        //remove data
+        for(int i=index; i<cursor->size-1;i++){
+            cursor->item[i] = cursor->item[i+1];
+        }
+        cursor->item[cursor->size-1] = 0;
+
+        //remove pointer
+        int rem_index = -1;
+        for(int i=0; i<cursor->size+1;i++){
+            if(cursor->children[i] == remover){
+                rem_index = i;
+            }
+        }
+        if(rem_index == -1){
+            return;
+        }
+        for(int i=rem_index; i<cursor->size;i++){
+            cursor->children[i] = cursor->children[i+1];
+        }
+        cursor->children[cursor->size] = nullptr;
+        cursor->size--;
+
+        //underflow check
+        if(cursor == this->root){
+            return;
+        }
+        if(cursor->size < degree/2){//underflow case
+
+            int sib_index =-1;
+            for(int i=0; i<cursor->parent->size+1;i++){
+                if(cursor == cursor->parent->children[i]){
+                    sib_index = i;
+                }
+            }
+            int left=sib_index-1;
+            int right=sib_index+1;
+
+            if(left >= 0){// left_sibiling exists
+                Node<T>* leftsibling= cursor->parent->children[left];
+
+                if(leftsibling->size > degree/2){ //if data number is enough to use this node
+                    T* temp = new T[cursor->size+1];
+
+                    //copy item
+                    for(int i=0; i<cursor->size; i++){
+                        temp[i]=cursor->item[i];
+                    }
+
+                    //insert and rearrange at cursor
+                    item_insert(temp, cursor->parent->item[left],cursor->size);
+                    for(int i=0; i<cursor->size+1; i++){
+                        cursor->item[i] = temp[i];
+                    }
+                    cursor->parent->item[left] = leftsibling->item[leftsibling->size-1];
+                    delete[] temp;
+
+                    Node<T>** child_temp = new Node<T>*[cursor->size+2];
+                    //copy child node
+                    for(int i=0; i<cursor->size+1; i++){
+                        child_temp[i]=cursor->children[i];
+                    }
+                    //insert and rearrange at child
+                    child_insert(child_temp,leftsibling->children[leftsibling->size],cursor->size,0);
+
+                    for(int i=0; i<cursor->size+2; i++){
+                        cursor->children[i] = child_temp[i];
+                    }
+                    delete[] child_temp;
+
+                    //size edit
+                    cursor->size++;
+                    leftsibling->size--;
+                    return;
+
+                }
+            }
+
+            if(right <= cursor->parent->size){// right_sibiling exists
+                Node<T>* rightsibling = cursor->parent->children[right];
+
+                if(rightsibling->size > degree/2){//if data number is enough to use this node
+                    T* temp = new T[cursor->size+1];
+
+                    //copy item
+                    for(int i=0; i<cursor->size; i++){
+                        temp[i]=cursor->item[i];
+                    }
+                    //insert and rearrange at cursor
+                    item_insert(temp,cursor->parent->item[sib_index],cursor->size);
+                    for(int i=0; i<cursor->size+1; i++){
+                        cursor->item[i] = temp[i];
+                    }
+                    cursor->parent->item[sib_index] = rightsibling->item[0];
+                    delete[] temp;
+
+                    //insert and reaarange at child
+
+                    cursor->children[cursor->size+1] = rightsibling->children[0];
+                    for(int i=0; i<rightsibling->size; i++){
+                        rightsibling->children[i] = rightsibling->children[i+1];
+                    }
+                    rightsibling->children[rightsibling->size] = nullptr;
+
+                    cursor->size++;
+                    rightsibling->size--;
+                    return;
+
+                }
+            }
+
+            //if sibling is not enought to use their data
+            //we have to merge step
+            if(left>=0){ // left_sibling exists
+                Node<T>* leftsibling = cursor->parent->children[left];
+
+                leftsibling->item[leftsibling->size] = cursor->parent->item[left];
+                //merge two leaf node
+                for(int i=0; i<cursor->size; i++){
+                    leftsibling->item[leftsibling->size+i+1]=cursor->item[i];
+                }
+                for(int i=0; i<cursor->size+1;i++){
+                    leftsibling->children[leftsibling->size+i+1] = cursor->children[i];
+                    cursor->children[i]->parent = leftsibling;
+                }
+                for(int i=0; i<cursor->size+1; i++){
+                    cursor->children[i] = nullptr;
+                }
+                leftsibling->size = leftsibling->size+cursor->size+1;
+                //delete recursion
+                Removepar(cursor, left,cursor->parent);
+                return;
+
+            }
+            if(right<=cursor->parent->size){ // right_sibiling exists
+                Node<T>* rightsibling = cursor->parent->children[right];
+
+                cursor->item[cursor->size] = cursor->parent->item[right-1];
+                //merge two leaf node
+                for(int i=0; i<rightsibling->size; i++){
+                    cursor->item[cursor->size+1+i]=rightsibling->item[i];
+                }
+                for(int i=0; i<rightsibling->size+1;i++){
+                    cursor->children[cursor->size+i+1] = rightsibling->children[i];
+                    rightsibling->children[i]->parent=rightsibling;
+                }
+                for(int i=0; i<rightsibling->size+1; i++){
+                    rightsibling->children[i] = nullptr;
+                }
+                //edit pointer
+                rightsibling->size = rightsibling->size+cursor->size+1;
+                //parent property edit
+                Removepar(rightsibling, right-1,cursor->parent);
+                return;
+            }
+        }
+        else{
+            return;
+        }
+    }
+
+    void clear(Node<T>* cursor){
+        if(cursor != nullptr){
+            if(!cursor->is_leaf){
+                for(int i=0; i <= cursor->size; i++){
+                    clear(cursor->children[i]);
+                }
+            }
+            delete[] cursor->item;
+            delete[] cursor->children;
+            delete cursor;
+        }
+    }
+    void bpt_print(){
+        print(this->root);
+    }
+
+    void imprime_registro(RegistroBPT* registro){
+        cout<<registro->chave;
+        cout<<registro->valor;
+        cout<<"\n";
+    }
+
+    void print(Node<T>* cursor) {
+        if (cursor != NULL) {
+            for (int i = 0; i < cursor->size; ++i) {
+                std::cout << cursor->item[i] << " ";
+            }
+            std::cout <<"\n";
+
+            if (!cursor->is_leaf) {
+                for (int i = 0; i < cursor->size + 1; ++i) {
+                    print(cursor->children[i]);
+                }
+            }
+        }
+    }
+};
+
+#endif
+
 int main(){
+    const int max = 3;
+    BPlusTree<RegistroBPT*>arvoreTeste(max);
+    RegistroBPT* reg1 = new RegistroBPT(5,4);
+    RegistroBPT* reg2 = new RegistroBPT();
     
-    bptree node;
-    node.inserir_arvore(5);
-    node.inserir_arvore(15);
-    node.inserir_arvore(25);
-    node.inserir_arvore(35);
-    node.inserir_arvore(45);
-    
-    node.imprimir_arvore(node.get_raiz());
-    //node.remover_arvore(15);
-    //node.imprimir_arvore(node.get_raiz());
-    return 0;
+    arvoreTeste.insert(reg1);
+    arvoreTeste.insert(reg2);
+    arvoreTeste.bpt_print();
 }
