@@ -420,18 +420,18 @@ public:
         
         if(irmao_index==-1){
             std::cout<<"Dado nao encontrado para remocao\n";
-            return; // there is no match remove value
+            return; //
         }
 
-        //remove data
+        //remover dado
         for(int i=irmao_index; i<cursor->ocupacao-1;i++){
             cursor->registros[i] = cursor->registros[i+1];
         }
         cursor->registros[cursor->ocupacao-1] = 0;
         cursor->ocupacao--;
 
-        //if cursor is raiz, and there are no more data -> clean!
-        if(cursor == this->raiz && cursor->ocupacao==0){//raiz case
+        //caso cursor seja raiz e esteja vazia
+        if(cursor == this->raiz && cursor->ocupacao==0){
             deletar(this->raiz);
             this->raiz = nullptr;
             return;
@@ -439,25 +439,22 @@ public:
         cursor->filhos[cursor->ocupacao] = cursor->filhos[cursor->ocupacao+1];
         cursor->filhos[cursor->ocupacao+1] = nullptr;
 
-
-        //underflow check
+        //checagem de underflow
         if(cursor == this->raiz){
             return;
         }
-        if(cursor->ocupacao < grau/2){//underflow case
+        if(cursor->ocupacao < grau/2){//underflow 
 
-            if(indice_esquerda >= 0){// left_sibiling exists
+            if(indice_esquerda >= 0){// se existir um irmão à esquerda
                 No<T>* irmao_esquerda= cursor->ancestral->filhos[indice_esquerda];
 
-                if(irmao_esquerda->ocupacao > grau/2){ //if data number is enough to use this node
+                if(irmao_esquerda->ocupacao > grau/2){ //se ocupação do irmão autorizar ceder dado para balanceamento
                     T* temp = new T[cursor->ocupacao+1];
 
-                    //copy registros
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
                     }
 
-                    //insert and rearrange
                     inserir_registro(temp,irmao_esquerda->registros[irmao_esquerda->ocupacao -1],cursor->ocupacao);
                     for(int i=0; i<cursor->ocupacao+1; i++){
                         cursor->registros[i] = temp[i];
@@ -465,33 +462,28 @@ public:
                     cursor->ocupacao++;
                     delete[] temp;
 
-                    //pointer edit
                     cursor->filhos[cursor->ocupacao] = cursor->filhos[cursor->ocupacao-1];
                     cursor->filhos[cursor->ocupacao-1] = nullptr;
 
-                    //sibling property edit
                     irmao_esquerda->registros[irmao_esquerda->ocupacao-1] = 0;
                     irmao_esquerda->ocupacao--;
-                    irmao_esquerda->filhos[irmao_esquerda->ocupacao] = irmao_esquerda->filhos[irmao_esquerda->ocupacao+1]; //cursor
+                    irmao_esquerda->filhos[irmao_esquerda->ocupacao] = irmao_esquerda->filhos[irmao_esquerda->ocupacao+1]; 
                     irmao_esquerda->filhos[irmao_esquerda->ocupacao+1]= nullptr;
 
-                    //parent property edit
                     cursor->ancestral->registros[indice_esquerda] = cursor->registros[0];
 
                     return;
                 }
             }
-            if(indice_direita <= cursor->ancestral->ocupacao){// right_sibiling exists
+            if(indice_direita <= cursor->ancestral->ocupacao){// Se existir um irmão à direita
                 No<T>* irmao_direito = cursor->ancestral->filhos[indice_direita];
 
-                if(irmao_direito->ocupacao >grau/2){//if data number is enough to use this node
+                if(irmao_direito->ocupacao >grau/2){
                     T* temp = new T[cursor->ocupacao+1];
 
-                    //copy registros
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
                     }
-                    //insert and rearrange
                     inserir_registro(temp,irmao_direito->registros[0],cursor->ocupacao);
                     for(int i=0; i<cursor->ocupacao+1; i++){
                         cursor->registros[i] = temp[i];
@@ -499,11 +491,9 @@ public:
                     cursor->ocupacao++;
                     delete[] temp;
 
-                    //pointer edit
                     cursor->filhos[cursor->ocupacao] = cursor->filhos[cursor->ocupacao-1];
                     cursor->filhos[cursor->ocupacao-1] = nullptr;
 
-                    //sibling property edit
                     for(int i=0; i<irmao_direito->ocupacao-1;i++){
                         irmao_direito->registros[i] = irmao_direito->registros[i+1];
                     }
@@ -512,30 +502,26 @@ public:
                     irmao_direito->filhos[irmao_direito->ocupacao] = irmao_direito->filhos[irmao_direito->ocupacao+1]; //cursor
                     irmao_direito->filhos[irmao_direito->ocupacao+1]= nullptr;
 
-                    //parent property edit
                     cursor->ancestral->registros[indice_direita-1] = irmao_direito->registros[0];
 
                     return;
                 }
             }
 
-            //if sibling is not enought to use their data
-            //we have to merge step
+            //se mesmo após receber dos irmãos ainda não satisfazer a condição de ocupação, realizar merge dos nós
 
-            if(indice_esquerda>=0){ // left_sibling exists
+            if(indice_esquerda>=0){
                 No<T>* irmao_esquerda = cursor->ancestral->filhos[indice_esquerda];
 
                 //merge two leaf node
                 for(int i=0; i<cursor->ocupacao; i++){
                     irmao_esquerda->registros[irmao_esquerda->ocupacao+i]=cursor->registros[i];
                 }
-                //edit pointer
                 irmao_esquerda->filhos[irmao_esquerda->ocupacao] = nullptr;
                 irmao_esquerda->ocupacao = irmao_esquerda->ocupacao+cursor->ocupacao;
                 irmao_esquerda->filhos[irmao_esquerda->ocupacao] = cursor->filhos[cursor->ocupacao];
 
-                //parent property edit
-                Removepar(cursor, indice_esquerda, cursor->ancestral);
+                remover_ancestral(cursor, indice_esquerda, cursor->ancestral);
                 for(int i=0; i<cursor->ocupacao;i++){
                     cursor->registros[i]=0;
                     cursor->filhos[i] = nullptr;
@@ -549,20 +535,18 @@ public:
                 return;
 
             }
-            if(indice_direita<=cursor->ancestral->ocupacao){ // right_sibiling exists
+            if(indice_direita<=cursor->ancestral->ocupacao){
                 No<T>* irmao_direito = cursor->ancestral->filhos[indice_direita];
 
-                //merge two leaf node
+                //realizar o merge de dois nós folhas
                 for(int i=0; i<irmao_direito->ocupacao; i++){
                     cursor->registros[i+cursor->ocupacao]=irmao_direito->registros[i];
-                }
-                //edit pointer
+                }  
                 cursor->filhos[cursor->ocupacao] = nullptr;
                 cursor->ocupacao = irmao_direito->ocupacao+cursor->ocupacao;
                 cursor->filhos[cursor->ocupacao] = irmao_direito->filhos[irmao_direito->ocupacao];
 
-                //parent property edit
-                Removepar(irmao_direito, indice_direita-1, cursor->ancestral);
+                remover_ancestral(irmao_direito, indice_direita-1, cursor->ancestral);
 
                 for(int i=0; i<irmao_direito->ocupacao;i++){
                     irmao_direito->registros[i]=0;
@@ -574,22 +558,20 @@ public:
                 delete[] irmao_direito->filhos;
                 delete irmao_direito;
                 return;
-
             }
-
         }
         else{
             return;
         }
     }
 
-    void Removepar(No<T>* node, int index, No<T>* ancestral){
+    void remover_ancestral(No<T>* node, int index, No<T>* ancestral){
         No<T>* remover = node;
         No<T>* cursor = ancestral;
         T target = cursor->registros[index];
 
-        //if cursor is raiz, and there are no more data -> child node is to be raiz!
-        if(cursor == this->raiz && cursor->ocupacao==1){//raiz case
+        //caso cursor seja raiz e não haja mais dados no seu vetor de registros
+        if(cursor == this->raiz && cursor->ocupacao==1){
             if(remover == cursor->filhos[0]){
                 delete[] remover->registros;
                 delete[] remover->filhos;
@@ -612,13 +594,13 @@ public:
             }
         }
 
-        //remove data
+        //remove dado
         for(int i=index; i<cursor->ocupacao-1;i++){
             cursor->registros[i] = cursor->registros[i+1];
         }
         cursor->registros[cursor->ocupacao-1] = 0;
 
-        //remove pointer
+        //remove ponteiro
         int index_remocao = -1;
         for(int i=0; i<cursor->ocupacao+1;i++){
             if(cursor->filhos[i] == remover){
@@ -634,11 +616,11 @@ public:
         cursor->filhos[cursor->ocupacao] = nullptr;
         cursor->ocupacao--;
 
-        //underflow check
+        //checagem de underflow
         if(cursor == this->raiz){
             return;
         }
-        if(cursor->ocupacao < grau/2){//underflow case
+        if(cursor->ocupacao < grau/2){//underflow 
 
             int sib_index =-1;
             for(int i=0; i<cursor->ancestral->ocupacao+1;i++){
@@ -649,18 +631,16 @@ public:
             int indice_esquerda=sib_index-1;
             int indice_direita=sib_index+1;
 
-            if(indice_esquerda >= 0){// left_sibiling exists
+            if(indice_esquerda >= 0){
                 No<T>* irmao_esquerda= cursor->ancestral->filhos[indice_esquerda];
 
-                if(irmao_esquerda->ocupacao > grau/2){ //if data number is enough to use this node
+                if(irmao_esquerda->ocupacao > grau/2){ 
                     T* temp = new T[cursor->ocupacao+1];
 
-                    //copy registros
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
                     }
 
-                    //insert and rearrange at cursor
                     inserir_registro(temp, cursor->ancestral->registros[indice_esquerda],cursor->ocupacao);
                     for(int i=0; i<cursor->ocupacao+1; i++){
                         cursor->registros[i] = temp[i];
@@ -669,11 +649,9 @@ public:
                     delete[] temp;
 
                     No<T>** child_temp = new No<T>*[cursor->ocupacao+2];
-                    //copy child node
                     for(int i=0; i<cursor->ocupacao+1; i++){
                         child_temp[i]=cursor->filhos[i];
                     }
-                    //insert and rearrange at child
                     inserir_filho(child_temp,irmao_esquerda->filhos[irmao_esquerda->ocupacao],cursor->ocupacao,0);
 
                     for(int i=0; i<cursor->ocupacao+2; i++){
@@ -688,25 +666,21 @@ public:
                 }
             }
 
-            if(indice_direita <= cursor->ancestral->ocupacao){// right_sibiling exists
+            if(indice_direita <= cursor->ancestral->ocupacao){
                 No<T>* irmao_direita = cursor->ancestral->filhos[indice_direita];
 
-                if(irmao_direita->ocupacao > grau/2){//if data number is enough to use this node
+                if(irmao_direita->ocupacao > grau/2){
                     T* temp = new T[cursor->ocupacao+1];
 
-                    //copy registros
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
                     }
-                    //insert and rearrange at cursor
                     inserir_registro(temp,cursor->ancestral->registros[sib_index],cursor->ocupacao);
                     for(int i=0; i<cursor->ocupacao+1; i++){
                         cursor->registros[i] = temp[i];
                     }
                     cursor->ancestral->registros[sib_index] = irmao_direita->registros[0];
                     delete[] temp;
-
-                    //insert and reaarange at child
 
                     cursor->filhos[cursor->ocupacao+1] = irmao_direita->filhos[0];
                     for(int i=0; i<irmao_direita->ocupacao; i++){
@@ -721,13 +695,12 @@ public:
                 }
             }
 
-            //if sibling is not enought to use their data
-            //we have to merge step
-            if(indice_esquerda>=0){ // left_sibling exists
+            //Casos de merge - critério igual ao da função acima 
+            if(indice_esquerda>=0){ 
                 No<T>* irmao_esquerda = cursor->ancestral->filhos[indice_esquerda];
 
                 irmao_esquerda->registros[irmao_esquerda->ocupacao] = cursor->ancestral->registros[indice_esquerda];
-                //merge two leaf node
+                //merge nos dois nós folha
                 for(int i=0; i<cursor->ocupacao; i++){
                     irmao_esquerda->registros[irmao_esquerda->ocupacao+i+1]=cursor->registros[i];
                 }
@@ -739,16 +712,16 @@ public:
                     cursor->filhos[i] = nullptr;
                 }
                 irmao_esquerda->ocupacao = irmao_esquerda->ocupacao+cursor->ocupacao+1;
-                //delete recursion
-                Removepar(cursor, indice_esquerda,cursor->ancestral);
+                
+                remover_ancestral(cursor, indice_esquerda,cursor->ancestral);
                 return;
 
             }
-            if(indice_direita<=cursor->ancestral->ocupacao){ // right_sibiling exists
+            if(indice_direita<=cursor->ancestral->ocupacao){
                 No<T>* irmao_direita = cursor->ancestral->filhos[indice_direita];
 
                 cursor->registros[cursor->ocupacao] = cursor->ancestral->registros[indice_direita-1];
-                //merge two leaf node
+                //merge nos dois nós folha
                 for(int i=0; i<irmao_direita->ocupacao; i++){
                     cursor->registros[cursor->ocupacao+1+i]=irmao_direita->registros[i];
                 }
@@ -759,10 +732,9 @@ public:
                 for(int i=0; i<irmao_direita->ocupacao+1; i++){
                     irmao_direita->filhos[i] = nullptr;
                 }
-                //edit pointer
+                
                 irmao_direita->ocupacao = irmao_direita->ocupacao+cursor->ocupacao+1;
-                //parent property edit
-                Removepar(irmao_direita, indice_direita-1,cursor->ancestral);
+                remover_ancestral(irmao_direita, indice_direita-1,cursor->ancestral);
                 return;
             }
         }
