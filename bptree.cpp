@@ -304,7 +304,6 @@ public:
             //ir até as folhas
             cursor = BPlusTreeRangeSearch(cursor, data);
 
-            
             if(cursor->ocupacao < (this->grau-1)){ //caso não haja overflow
                 
                 cursor->registros = inserir_registro(cursor->registros,data,cursor->ocupacao);
@@ -375,9 +374,31 @@ public:
         No<T>* cursor = this->raiz;
 
         //Chegar até as folhas
-        cursor = BPlusTreeRangeSearch(cursor,data);
+        cursor = busca_BPlusTree(cursor,data);
+        if (cursor == nullptr){
+            std::cout<<"Dado nao encontrado na arvore\n";
+            return;
+        }
 
-        //make sibling index
+        //Se há somente a raiz e ela não tem filhos ainda
+        int filhos_index = 0;
+        for(int i = 0; i < this->grau; i++){
+            if(cursor->filhos[i] == nullptr){
+                filhos_index++;
+            }
+        }
+        if(filhos_index == this->grau){
+            for(int i = 0; i < filhos_index; i++){
+                if(cursor->registros[i] == data){
+                    cursor->registros[i] = 0;
+                    cursor->ocupacao--;
+                }
+            }
+            std::cout<<data<<"removido\n";
+            return;
+        }
+
+        //demais remoções
         int irmao_index =-1;
         for(int i=0; i<cursor->ancestral->ocupacao+1;i++){
             if(cursor == cursor->ancestral->filhos[i]){
@@ -396,7 +417,7 @@ public:
                 break;
             }
         } */
-        //if data dosen't exist, nothing happen
+        
         if(irmao_index==-1){
             std::cout<<"Dado nao encontrado para remocao\n";
             return; // there is no match remove value
@@ -826,5 +847,9 @@ int main(){
 
     arvoreTeste.inserir_arvore(10);
     arvoreTeste.inserir_arvore(15);
+    arvoreTeste.inserir_arvore(5);
     arvoreTeste.remove(39);
+    arvoreTeste.remove(15);
+    arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 10));
+    arvoreTeste.imprimir_arvore();
 }
