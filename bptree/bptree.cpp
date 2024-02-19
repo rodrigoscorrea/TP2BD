@@ -2,15 +2,27 @@
 #define BPlusTree_H
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cstdio>
+#include <cassert>
+#include "../estruturas/estruturaBlocoRegistro.hpp"
+
+//Registro que será usado na árvore
+struct RegistroBPT{ //VERIFICAR DEPOIS SE DÁ PRA FAZER SETANDO AO INVÉS DOS DOIS PARA DIFERENCIAR MAIS AINDA
+    int chave, valor;
+    RegistroBPT(int chave, int valor) : chave(chave), valor(valor) {}
+    RegistroBPT() : chave(0), valor(0) {} 
+};
 
 template <typename T>
 struct No {
     bool folha;
     std::size_t grau; 
     std::size_t ocupacao;  
-    T* registros;
-    No<T>** filhos;
-    No<T>* ancestral;
+    RegistroBPT* registros;
+    No<RegistroBPT>** filhos;
+    No<RegistroBPT>* ancestral;
 
 public:
     No(std::size_t _grau) {
@@ -18,41 +30,25 @@ public:
         this->grau = _grau;
         this->ocupacao = 0;
 
-        T* registro_aux = new T[grau-1];
+        RegistroBPT* registro_aux = new RegistroBPT[grau-1];
         for(int i=0; i<grau-1; i++){
-            registro_aux[i] = 0;
+            registro_aux[i] = RegistroBPT(0,0);
         }
         this->registros = registro_aux;
 
-        No<T>** filhos_aux = new No<T>*[grau];
+        No<RegistroBPT>** filhos_aux = new No<RegistroBPT>*[grau];
         for(int i=0; i<grau; i++){
             filhos_aux[i] = nullptr;
         }
         this->filhos = filhos_aux;
-
         this->ancestral = nullptr;
-
-    }
-};
-
-//Registro que será usado na árvore
-struct RegistroBPT{
-    int chave, valor;
-
-    RegistroBPT(int chave, int valor){ //Construtor para operações
-        this->chave = chave;
-        this->valor = valor;
-    }
-
-    RegistroBPT(){ //Construtor para inicializações
-        this->chave = 0;
-        this->valor = 0;
     }
 };
 
 template <typename T>
 class BPlusTree {
-    No<T>* raiz;
+public:
+    No<RegistroBPT>* raiz;
     std::size_t grau;
 
 public:
@@ -64,24 +60,24 @@ public:
         deletar(this->raiz);
     }
 
-    No<T>* get_raiz(){
+    No<RegistroBPT>* get_raiz(){
         return this->raiz;
     }
 
-    No<T>* busca_BPlusTree(No<T>* node, T chave){ //Raiz deve ser passada como parâmetro para node
+    No<RegistroBPT>* busca_BPlusTree(No<RegistroBPT>* node, int chave_busca){ //Raiz deve ser passada como parâmetro para node
         if(node == nullptr) { // Caso raiz nula
             return nullptr;
         }
         else{
-            No<T>* cursor = node; 
+            No<RegistroBPT>* cursor = node; 
 
-            while(!cursor->folha){ 
+            while(cursor->folha == false){ 
                 for(int i=0; i<cursor->ocupacao; i++){ 
-                    if(chave < cursor->registros[i]){ 
+                    if(chave_busca < cursor->registros[i].chave){ 
                         cursor = cursor->filhos[i];
                         break;
                     }
-                    if(i == (cursor->ocupacao)-1){
+                    if(i == (cursor->ocupacao -1)){
                         cursor = cursor->filhos[i+1];
                         break;
                     }
@@ -90,7 +86,7 @@ public:
 
             //busca se a chave existe no nó folha
             for(int i=0; i<cursor->ocupacao; i++){
-                if(cursor->registros[i] == chave){
+                if(cursor->registros[i].chave == chave_busca){
                     return cursor;
                 }
             }
@@ -98,16 +94,16 @@ public:
             return nullptr;
         }
     }
-    No<T>* BPlusTreeRangeSearch(No<T>* node, T chuva){ //Também usa raiz como parâmetro para node
+    No<RegistroBPT>* BPlusTreeRangeSearch(No<RegistroBPT>* node, RegistroBPT chave_busca){ //Também usa raiz como parâmetro para node
         if(node == nullptr) { // para raiz nula
             return nullptr;
         }
         else{
-            No<T>* cursor = node; 
+            No<RegistroBPT>* cursor = node; 
 
-            while(!cursor->folha){ 
+            while(cursor->folha == false){ 
                 for(int i=0; i<cursor->ocupacao; i++){ 
-                    if(chuva < cursor->registros[i]){ 
+                    if(chave_busca.chave < cursor->registros[i].chave){ 
                         cursor = cursor->filhos[i];
                         break;
                     }
@@ -120,51 +116,29 @@ public:
             return cursor;
         }
     }
-    /*
-    int busca_profundidade(T inicio, T fim, T* result_data, int arr_length) {
-        int index=0;
-
-        No<T>* start_node = BPlusTreeRangeSearch(this->raiz,inicio);
-        No<T>* cursor = start_node;
-        T temp= cursor->registros[0];
-
-        while(temp<=fim){
-            if(cursor == nullptr){
-                break;
-            }
-            for(int i=0; i< cursor->ocupacao;i++){
-                temp = cursor->registros[i];
-                if((temp >= inicio)&&(temp <= fim)){
-                    result_data[index] = temp;
-                    index++;
-                }
-            }
-            cursor = cursor->filhos[cursor->ocupacao];
-        }
-        return index;
-    } */
-    bool busca(T data) {  //checa se registro existe ou não
-        return busca_BPlusTree(this->raiz, data) != nullptr;
+    
+    bool busca(int chave_busca) {  //checa se registro existe ou não
+        return busca_BPlusTree(this->raiz, RegistroBPT(chave_busca,0)) != nullptr;
     }
 
-    int busca_index(T* arr, T data, int len){
-        int index = 0;
-        for(int i=0; i<len; i++){
-            if(data < arr[i]){
-                index = i;
+    int busca_index(RegistroBPT* registros, RegistroBPT registro_buscado, int tamanho){
+        int index_registros = 0;
+        for(int i=0; i<tamanho; i++){
+            if(registro_buscado.chave < registros[i].chave){
+                index_registros = i;
                 break;
             }
-            if(i==len-1){
-                index = len;
+            if(i==tamanho-1){
+                index_registros = tamanho;
                 break;
             }
         }
-        return index;
+        return index_registros;
     }
-    T* inserir_registro(T* vet, T data, int tamanho){
+    RegistroBPT* inserir_registro(RegistroBPT* registros, RegistroBPT registro_insercao, int tamanho){
         int index = 0;
         for(int i=0; i<tamanho; i++){
-            if(data < vet[i]){
+            if(registro_insercao.chave < registros[i].chave){
                 index = i;
                 break;
             }
@@ -175,25 +149,25 @@ public:
         }
 
         for(int i = tamanho; i > index; i--){
-            vet[i] = vet[i-1];
+            registros[i] = registros[i-1];
         }
 
-        vet[index] = data;
+        registros[index] = registro_insercao;
 
-        return vet;
+        return registros;
     }
-    No<T>** inserir_filho(No<T>** filhos, No<T>*filho,int tamanho,int index){
+    No<RegistroBPT>** inserir_filho(No<RegistroBPT>** filhos, No<RegistroBPT>*filho,int tamanho,int index){
         for(int i= tamanho; i > index; i--){
-            filhos[i] = filhos[i - 1];
+            filhos[i] = filhos[i-1];
         }
         filhos[index] = filho;
         return filhos;
     }
-    No<T>* inserir_registro_filho(No<T>* no_insercao, T data, No<T>* filho){
+    No<RegistroBPT>* inserir_registro_filho(No<RegistroBPT>* no_insercao, RegistroBPT registro_insercao, No<RegistroBPT>* filho){
         int registro_index=0;
         int filho_index=0;
         for(int i=0; i< no_insercao->ocupacao; i++){
-            if(data < no_insercao->registros[i]){
+            if(registro_insercao.chave < no_insercao->registros[i].chave){
                 registro_index = i;
                 filho_index = i+1;
                 break;
@@ -211,35 +185,34 @@ public:
             no_insercao->filhos[i] = no_insercao->filhos[i-1];
         }
 
-        no_insercao->registros[registro_index] = data;
+        no_insercao->registros[registro_index] = registro_insercao;
         no_insercao->filhos[filho_index] = filho;
 
         return no_insercao;
     }
-    void inserir_ancestral(No<T>* pai,No<T>* filho, T data){
+    void inserir_ancestral(No<RegistroBPT>* ancestral,No<RegistroBPT>* filho, RegistroBPT registro_insercao){
         
-        No<T>* cursor = pai;
+        No<RegistroBPT>* cursor = ancestral;
         if(cursor->ocupacao < this->grau-1){//checagem de overflow, caso negativo
-            cursor = inserir_registro_filho(cursor,data,filho);
+            cursor = inserir_registro_filho(cursor,registro_insercao,filho);
             cursor->ocupacao++;
         }
         else{//overflow positivo
-            
-            auto* novo_no = new No<T>(this->grau);
+            auto* novo_no = new No<RegistroBPT>(this->grau);
             novo_no->ancestral = cursor->ancestral;
 
-            T* registros_aux = new T[cursor->ocupacao+1];
+            RegistroBPT* registros_aux = new RegistroBPT[cursor->ocupacao+1];
             for(int i=0; i<cursor->ocupacao; i++){
                 registros_aux[i] = cursor->registros[i];
             }
-            registros_aux = inserir_registro(registros_aux,data,cursor->ocupacao);
+            registros_aux = inserir_registro(registros_aux,registro_insercao,cursor->ocupacao);
 
-            auto** filhos_aux = new No<T>*[cursor->ocupacao+2];
+            auto** filhos_aux = new No<RegistroBPT>*[cursor->ocupacao+2];
             for(int i=0; i<cursor->ocupacao+1;i++){
                 filhos_aux[i] = cursor->filhos[i];
             }
             filhos_aux[cursor->ocupacao+1] = nullptr;
-            filhos_aux = inserir_filho(filhos_aux,filho,cursor->ocupacao+1,busca_index(registros_aux,data,cursor->ocupacao+1));
+            filhos_aux = inserir_filho(filhos_aux,filho,cursor->ocupacao+1,busca_index(registros_aux,registro_insercao,cursor->ocupacao+1));
 
             //divisao dos nós
             cursor->ocupacao = (this->grau)/2;
@@ -265,14 +238,14 @@ public:
             novo_no->filhos[novo_no->ocupacao] = filhos_aux[cursor->ocupacao+novo_no->ocupacao+1];
             novo_no->filhos[novo_no->ocupacao]->ancestral=novo_no;
 
-            T registros_ancestral = registros_aux[this->grau/2];
+            RegistroBPT registros_ancestral = registros_aux[this->grau/2];
 
             delete[] registros_aux;
             delete[] filhos_aux;
 
-            //checagem de no ancestral (balanceamento)
+            //Balanceamento - ancestral
             if(cursor->ancestral == nullptr){//caso seja raiz, não há n
-                auto* novo_ancestral = new No<T>(this->grau);
+                auto* novo_ancestral = new No<RegistroBPT>(this->grau);
                 cursor->ancestral = novo_ancestral;
                 novo_no->ancestral = novo_ancestral;
 
@@ -291,22 +264,24 @@ public:
             }
         }
     }
-    void inserir_arvore(T data) {
+    void inserir_arvore(RegistroBPT* registro_insercao) {
+
+        RegistroBPT registro_aux(registro_insercao->chave, registro_insercao->valor);
+
         if(this->raiz == nullptr){ //caso de raiz
-            this->raiz = new No<T>(this->grau);
+            this->raiz = new No<RegistroBPT>(this->grau);
             this->raiz->folha = true;
-            this->raiz->registros[0] = data;
-            this->raiz->ocupacao = 1; //
-        }
-        else{ 
-            No<T>* cursor = this->raiz;
+            this->raiz->registros[0] = *registro_insercao;
+            this->raiz->ocupacao = 1; 
+        } else { 
+            No<RegistroBPT>* cursor = this->raiz;
 
             //ir até as folhas
-            cursor = BPlusTreeRangeSearch(cursor, data);
+            cursor = BPlusTreeRangeSearch(cursor, registro_aux);
 
             if(cursor->ocupacao < (this->grau-1)){ //caso não haja overflow
                 
-                cursor->registros = inserir_registro(cursor->registros,data,cursor->ocupacao);
+                cursor->registros = inserir_registro(cursor->registros,*registro_insercao,cursor->ocupacao);
                 cursor->ocupacao++;
                
                 cursor->filhos[cursor->ocupacao] = cursor->filhos[cursor->ocupacao-1];
@@ -314,15 +289,15 @@ public:
             }
             else{//overflow detectado
                 
-                auto* novo_no = new No<T>(this->grau);
+                auto* novo_no = new No<RegistroBPT>(this->grau);
                 novo_no->folha = true;
                 novo_no->ancestral = cursor->ancestral;
 
-                T* registros_aux = new T[cursor->ocupacao+1];
+                RegistroBPT* registros_aux = new RegistroBPT[cursor->ocupacao+1];
                 for(int i=0; i<cursor->ocupacao; i++){
                     registros_aux[i] = cursor->registros[i];
                 }
-                registros_aux = inserir_registro(registros_aux,data,cursor->ocupacao);
+                registros_aux = inserir_registro(registros_aux,*registro_insercao,cursor->ocupacao);
 
                 //dividir nós
                 cursor->ocupacao = (this->grau)/2;
@@ -347,10 +322,10 @@ public:
                 delete[] registros_aux;
 
                 //checagem de ancestral
-                T registros_ancestral = novo_no->registros[0];
+                RegistroBPT registros_ancestral = novo_no->registros[0];
 
                 if(cursor->ancestral == nullptr){ //caso não haja nó ancestral -> cursor = raiz
-                    auto* novo_ancestral = new No<T>(this->grau);
+                    auto* novo_ancestral = new No<RegistroBPT>(this->grau);
                     cursor->ancestral = novo_ancestral;
                     novo_no->ancestral = novo_ancestral;
 
@@ -369,12 +344,12 @@ public:
         }
     }
 
-    void remove(T data) { // remove um registro da árvore
+    void remove(int alvo_remocao) { // remove um registro da árvore
         
-        No<T>* cursor = this->raiz;
+        No<RegistroBPT>* cursor = this->raiz;
 
         //Chegar até as folhas
-        cursor = busca_BPlusTree(cursor,data);
+        cursor = busca_BPlusTree(cursor,alvo_remocao);
         if (cursor == nullptr){
             std::cout<<"Dado nao encontrado na arvore\n";
             return;
@@ -389,12 +364,12 @@ public:
         }
         if(filhos_index == this->grau){
             for(int i = 0; i < filhos_index; i++){
-                if(cursor->registros[i] == data){
-                    cursor->registros[i] = 0;
+                if(cursor->registros[i].chave == alvo_remocao){
+                    cursor->registros[i] = RegistroBPT(0,0);
                     cursor->ocupacao--;
                 }
             }
-            std::cout<<data<<"removido\n";
+            std::cout<<alvo_remocao<<" removido\n";
             return;
         }
 
@@ -407,16 +382,6 @@ public:
         }
         int indice_esquerda=irmao_index-1;
         int indice_direita=irmao_index+1;
-
-
-        //find data
-        /* int exclusao_index=-1;
-        for(int i=0; i< cursor->ocupacao; i++){
-            if(cursor->registros[i] == data){
-                exclusao_index = i;
-                break;
-            }
-        } */
         
         if(irmao_index==-1){
             std::cout<<"Dado nao encontrado para remocao\n";
@@ -427,8 +392,10 @@ public:
         for(int i=irmao_index; i<cursor->ocupacao-1;i++){
             cursor->registros[i] = cursor->registros[i+1];
         }
-        cursor->registros[cursor->ocupacao-1] = 0;
+
+        cursor->registros[cursor->ocupacao-1] = RegistroBPT(0,0);
         cursor->ocupacao--;
+        std::cout<<alvo_remocao<<" removido\n";
 
         //caso cursor seja raiz e esteja vazia
         if(cursor == this->raiz && cursor->ocupacao==0){
@@ -446,10 +413,10 @@ public:
         if(cursor->ocupacao < grau/2){//underflow 
 
             if(indice_esquerda >= 0){// se existir um irmão à esquerda
-                No<T>* irmao_esquerda= cursor->ancestral->filhos[indice_esquerda];
+                No<RegistroBPT>* irmao_esquerda= cursor->ancestral->filhos[indice_esquerda];
 
                 if(irmao_esquerda->ocupacao > grau/2){ //se ocupação do irmão autorizar ceder dado para balanceamento
-                    T* temp = new T[cursor->ocupacao+1];
+                    RegistroBPT* temp = new RegistroBPT[cursor->ocupacao+1];
 
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
@@ -465,7 +432,7 @@ public:
                     cursor->filhos[cursor->ocupacao] = cursor->filhos[cursor->ocupacao-1];
                     cursor->filhos[cursor->ocupacao-1] = nullptr;
 
-                    irmao_esquerda->registros[irmao_esquerda->ocupacao-1] = 0;
+                    irmao_esquerda->registros[irmao_esquerda->ocupacao-1] = RegistroBPT(0,0);
                     irmao_esquerda->ocupacao--;
                     irmao_esquerda->filhos[irmao_esquerda->ocupacao] = irmao_esquerda->filhos[irmao_esquerda->ocupacao+1]; 
                     irmao_esquerda->filhos[irmao_esquerda->ocupacao+1]= nullptr;
@@ -476,10 +443,10 @@ public:
                 }
             }
             if(indice_direita <= cursor->ancestral->ocupacao){// Se existir um irmão à direita
-                No<T>* irmao_direito = cursor->ancestral->filhos[indice_direita];
+                No<RegistroBPT>* irmao_direito = cursor->ancestral->filhos[indice_direita];
 
                 if(irmao_direito->ocupacao >grau/2){
-                    T* temp = new T[cursor->ocupacao+1];
+                    RegistroBPT* temp = new RegistroBPT[cursor->ocupacao+1];
 
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
@@ -497,13 +464,12 @@ public:
                     for(int i=0; i<irmao_direito->ocupacao-1;i++){
                         irmao_direito->registros[i] = irmao_direito->registros[i+1];
                     }
-                    irmao_direito->registros[irmao_direito->ocupacao-1] = 0;
+                    irmao_direito->registros[irmao_direito->ocupacao-1] = RegistroBPT(0,0);
                     irmao_direito->ocupacao--;
                     irmao_direito->filhos[irmao_direito->ocupacao] = irmao_direito->filhos[irmao_direito->ocupacao+1]; //cursor
                     irmao_direito->filhos[irmao_direito->ocupacao+1]= nullptr;
 
                     cursor->ancestral->registros[indice_direita-1] = irmao_direito->registros[0];
-
                     return;
                 }
             }
@@ -511,7 +477,7 @@ public:
             //se mesmo após receber dos irmãos ainda não satisfazer a condição de ocupação, realizar merge dos nós
 
             if(indice_esquerda>=0){
-                No<T>* irmao_esquerda = cursor->ancestral->filhos[indice_esquerda];
+                No<RegistroBPT>* irmao_esquerda = cursor->ancestral->filhos[indice_esquerda];
 
                 //merge two leaf node
                 for(int i=0; i<cursor->ocupacao; i++){
@@ -523,7 +489,7 @@ public:
 
                 remover_ancestral(cursor, indice_esquerda, cursor->ancestral);
                 for(int i=0; i<cursor->ocupacao;i++){
-                    cursor->registros[i]=0;
+                    cursor->registros[i]=RegistroBPT(0,0);
                     cursor->filhos[i] = nullptr;
                 }
                 cursor->filhos[cursor->ocupacao] = nullptr;
@@ -536,7 +502,7 @@ public:
 
             }
             if(indice_direita<=cursor->ancestral->ocupacao){
-                No<T>* irmao_direito = cursor->ancestral->filhos[indice_direita];
+                No<RegistroBPT>* irmao_direito = cursor->ancestral->filhos[indice_direita];
 
                 //realizar o merge de dois nós folhas
                 for(int i=0; i<irmao_direito->ocupacao; i++){
@@ -549,7 +515,7 @@ public:
                 remover_ancestral(irmao_direito, indice_direita-1, cursor->ancestral);
 
                 for(int i=0; i<irmao_direito->ocupacao;i++){
-                    irmao_direito->registros[i]=0;
+                    irmao_direito->registros[i]=RegistroBPT(0,0);
                     irmao_direito->filhos[i] = nullptr;
                 }
                 irmao_direito->filhos[irmao_direito->ocupacao] = nullptr;
@@ -565,10 +531,10 @@ public:
         }
     }
 
-    void remover_ancestral(No<T>* node, int index, No<T>* ancestral){
-        No<T>* remover = node;
-        No<T>* cursor = ancestral;
-        T target = cursor->registros[index];
+    void remover_ancestral(No<RegistroBPT>* node, int index, No<RegistroBPT>* ancestral){
+        No<RegistroBPT>* remover = node;
+        No<RegistroBPT>* cursor = ancestral;
+        RegistroBPT target = cursor->registros[index];
 
         //caso cursor seja raiz e não haja mais dados no seu vetor de registros
         if(cursor == this->raiz && cursor->ocupacao==1){
@@ -598,7 +564,7 @@ public:
         for(int i=index; i<cursor->ocupacao-1;i++){
             cursor->registros[i] = cursor->registros[i+1];
         }
-        cursor->registros[cursor->ocupacao-1] = 0;
+        cursor->registros[cursor->ocupacao-1] = RegistroBPT(0,0);
 
         //remove ponteiro
         int index_remocao = -1;
@@ -632,10 +598,10 @@ public:
             int indice_direita=sib_index+1;
 
             if(indice_esquerda >= 0){
-                No<T>* irmao_esquerda= cursor->ancestral->filhos[indice_esquerda];
+                No<RegistroBPT>* irmao_esquerda= cursor->ancestral->filhos[indice_esquerda];
 
                 if(irmao_esquerda->ocupacao > grau/2){ 
-                    T* temp = new T[cursor->ocupacao+1];
+                    RegistroBPT* temp = new RegistroBPT[cursor->ocupacao+1];
 
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
@@ -648,7 +614,7 @@ public:
                     cursor->ancestral->registros[indice_esquerda] = irmao_esquerda->registros[irmao_esquerda->ocupacao-1];
                     delete[] temp;
 
-                    No<T>** child_temp = new No<T>*[cursor->ocupacao+2];
+                    No<RegistroBPT>** child_temp = new No<RegistroBPT>*[cursor->ocupacao+2];
                     for(int i=0; i<cursor->ocupacao+1; i++){
                         child_temp[i]=cursor->filhos[i];
                     }
@@ -667,10 +633,10 @@ public:
             }
 
             if(indice_direita <= cursor->ancestral->ocupacao){
-                No<T>* irmao_direita = cursor->ancestral->filhos[indice_direita];
+                No<RegistroBPT>* irmao_direita = cursor->ancestral->filhos[indice_direita];
 
                 if(irmao_direita->ocupacao > grau/2){
-                    T* temp = new T[cursor->ocupacao+1];
+                    RegistroBPT* temp = new RegistroBPT[cursor->ocupacao+1];
 
                     for(int i=0; i<cursor->ocupacao; i++){
                         temp[i]=cursor->registros[i];
@@ -697,7 +663,7 @@ public:
 
             //Casos de merge - critério igual ao da função acima 
             if(indice_esquerda>=0){ 
-                No<T>* irmao_esquerda = cursor->ancestral->filhos[indice_esquerda];
+                No<RegistroBPT>* irmao_esquerda = cursor->ancestral->filhos[indice_esquerda];
 
                 irmao_esquerda->registros[irmao_esquerda->ocupacao] = cursor->ancestral->registros[indice_esquerda];
                 //merge nos dois nós folha
@@ -718,7 +684,7 @@ public:
 
             }
             if(indice_direita<=cursor->ancestral->ocupacao){
-                No<T>* irmao_direita = cursor->ancestral->filhos[indice_direita];
+                No<RegistroBPT>* irmao_direita = cursor->ancestral->filhos[indice_direita];
 
                 cursor->registros[cursor->ocupacao] = cursor->ancestral->registros[indice_direita-1];
                 //merge nos dois nós folha
@@ -743,7 +709,7 @@ public:
         }
     }
 
-    void deletar(No<T>* cursor){
+    void deletar(No<RegistroBPT>* cursor){
         if(cursor != nullptr){
             if(!cursor->folha){
                 for(int i=0; i <= cursor->ocupacao; i++){
@@ -762,20 +728,18 @@ public:
         imprimir_no(this->raiz);
     }
 
-    /* void imprime_registro(RegistroBPT* registro){
-        cout<<registro->chave;
-        cout<<registro->valor;
-        cout<<"\n";
-    } */
+    void imprime_registro(RegistroBPT registro){
+        std::cout<<"Chave: "<< registro.chave <<" Valor: "<< registro.valor <<"\n";
+    }
 
-    void imprimir_no(No<T>* cursor) {
+    void imprimir_no(No<RegistroBPT>* cursor) {
         if (cursor != NULL) {
             for (int i = 0; i < cursor->ocupacao; ++i) {
-                std::cout << cursor->registros[i] << " ";
+                imprime_registro(cursor->registros[i]);
             }
             std::cout <<"\n";
 
-            if (!cursor->folha) {
+            if (cursor->folha == false) {
                 for (int i = 0; i < cursor->ocupacao + 1; ++i) {
                     imprimir_no(cursor->filhos[i]);
                 }
@@ -786,42 +750,50 @@ public:
 
 #endif
 
-int main(){
+int main(int argc, char const* argv[]){
     const int max = 3;
-
-    //Teste com registro
-
-    /* BPlusTree<RegistroBPT*>arvoreTeste(max);
+    //TESTE COM ARVORE EM MEMÓRIA 
+    BPlusTree<RegistroBPT*>arvoreTeste(max);
     RegistroBPT* reg1 = new RegistroBPT(5,4);
-    RegistroBPT* reg2 = new RegistroBPT();
+    RegistroBPT* reg2 = new RegistroBPT(10,2);
+    RegistroBPT* reg3 = new RegistroBPT(15,7);
+    RegistroBPT* reg4 = new RegistroBPT(25,6);
+    RegistroBPT* reg5 = new RegistroBPT(35,9);
+    RegistroBPT* reg6 = new RegistroBPT(45,8);
     
-    arvoreTeste.insert(reg1);
-    arvoreTeste.insert(reg2); */
+    arvoreTeste.inserir_arvore(reg1);
+    arvoreTeste.inserir_arvore(reg2);
+    arvoreTeste.inserir_arvore(reg3);
+    arvoreTeste.inserir_arvore(reg4);
+    arvoreTeste.inserir_arvore(reg5);
+    arvoreTeste.inserir_arvore(reg6);
 
-    //Teste com inteiros
-    BPlusTree<int>arvoreTeste(max);
-    /* arvoreTeste.inserir_arvore(5);
-    arvoreTeste.inserir_arvore(10);
-    arvoreTeste.inserir_arvore(15);
-    arvoreTeste.inserir_arvore(25);
-    arvoreTeste.inserir_arvore(35);
-    arvoreTeste.inserir_arvore(45);
-
-    //Teste de busca - inteiros
-    arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 45));
+    //RegistroBPT* buscado = new RegistroBPT(39,5); versão antiga da busca_BPlusTree
 
     arvoreTeste.remove(25);
-    arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 25));
-    arvoreTeste.remove(39);
-    //Teste de arvore inexistente
-    arvoreTeste.deletar(arvoreTeste.get_raiz());
-    arvoreTeste.imprimir_arvore(); */
-
-    arvoreTeste.inserir_arvore(10);
-    arvoreTeste.inserir_arvore(15);
-    arvoreTeste.inserir_arvore(5);
-    arvoreTeste.remove(39);
-    arvoreTeste.remove(15);
-    arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 10));
+    arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 25)); //versão nova, busca via valor direto
     arvoreTeste.imprimir_arvore();
-}
+} 
+
+
+/* //TESTE COM ARVORE EM MEMÓRIA 
+    BPlusTree<RegistroBPT*>arvoreTeste(max);
+    RegistroBPT* reg1 = new RegistroBPT(5,4);
+    RegistroBPT* reg2 = new RegistroBPT(10,2);
+    RegistroBPT* reg3 = new RegistroBPT(15,7);
+    RegistroBPT* reg4 = new RegistroBPT(25,6);
+    RegistroBPT* reg5 = new RegistroBPT(35,9);
+    RegistroBPT* reg6 = new RegistroBPT(45,8);
+    
+    arvoreTeste.inserir_arvore(reg1);
+    arvoreTeste.inserir_arvore(reg2);
+    arvoreTeste.inserir_arvore(reg3);
+    arvoreTeste.inserir_arvore(reg4);
+    arvoreTeste.inserir_arvore(reg5);
+    arvoreTeste.inserir_arvore(reg6);
+
+    //RegistroBPT* buscado = new RegistroBPT(39,5); versão antiga da busca_BPlusTree
+
+    arvoreTeste.remove(25);
+    arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 25)); //versão nova, busca via valor direto
+    arvoreTeste.imprimir_arvore(); */
