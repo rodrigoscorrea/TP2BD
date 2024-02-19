@@ -1,0 +1,136 @@
+#ifndef BLOCOREGISTRO_HPP
+#define BLOCOREGISTRO_HPP
+#define TAM_BLOCO 4096
+#define X 18
+
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <vector> //tentar trabalhar sem e se conseguir apagar 
+
+using namespace std;
+
+struct Registro{
+    int id;
+    string title;
+    int year;
+    string authors;
+    int citations;
+    string update;
+    string snippet;
+    int ocupacao;
+};
+
+struct Cabecalho_Bloco{
+    int quantidade_registros;
+    int tamanho_disponivel;
+    int posicoes_registros[X];
+    
+};
+
+struct Bloco {
+    Cabecalho_Bloco* cabecalho;
+    Registro* dados[TAM_BLOCO];
+};
+
+//Funções para Registro
+Registro* criar_registro(int id, string title, int year, string authors, int citations, string update, string snippet) {
+    Registro* registro = new Registro();
+    registro->id = id;
+    registro->title = title;
+    registro->year = year;
+    registro->authors = authors;
+    registro->citations = citations;
+    registro->update = update;
+    registro->snippet = snippet;
+    registro->ocupacao = registro->title.size() + 4 + sizeof(int) + sizeof(int) + registro->authors.size() + sizeof(int) + sizeof(int) + registro->update.size() + registro->snippet.size();
+    return registro;
+}
+
+void imprimir_registro(Registro* registro) {
+    std::cout << "\nId: " << registro->id << "\n";
+    std::cout << "Titulo: " << registro->title << "| Ano: " << registro->year <<"\n";
+    std::cout << "Autores: " << registro->authors << "\n";
+    std::cout << "Citacoes: " << registro->citations << "\n";
+    std::cout << "Atualizacao: " << registro->update << "\n";
+    std::cout << "Snippet: " << registro->snippet << "\n";
+
+}
+
+Registro* preencher_registro(Registro* registro, Bloco* bloco, int cursor){
+    registro->title = string((char *)&bloco->dados[cursor]);
+    cursor += registro->title.size() + 1;
+
+    memcpy(&registro->year, &bloco->dados[cursor], 2);
+    cursor += sizeof(int);
+
+    registro->authors = string((char *)&bloco->dados[cursor]);
+    cursor += registro->authors.size() + 1;
+
+    memcpy(&registro->citations, &bloco->dados[cursor], 1);
+    cursor += sizeof(int);
+
+    registro->update = string((char *)&bloco->dados[cursor]);
+    cursor += registro->update.size() + 1;
+
+    registro->snippet = string((char *)&bloco->dados[cursor]);
+    cursor += registro->snippet.size() + 1;
+
+    return registro;
+}
+
+//Funções para Bloco
+Cabecalho_Bloco* criar_cabecalho_bloco() {
+    Cabecalho_Bloco* novo_cabecalho = new Cabecalho_Bloco();
+    novo_cabecalho->quantidade_registros = 0;
+    for (int i = 0; i < X; i++) {
+        novo_cabecalho->posicoes_registros[i] = 0;
+    }
+    novo_cabecalho->tamanho_disponivel = TAM_BLOCO - sizeof(int) * 18 - sizeof(int) * 2;
+
+    return novo_cabecalho;
+}
+
+Bloco* criar_bloco() {
+    Bloco* novo_bloco = new Bloco();
+    novo_bloco->cabecalho = criar_cabecalho_bloco();
+    for(int i = 0; i < TAM_BLOCO; i++) {
+        novo_bloco->dados[i] = 0;
+    }
+    return novo_bloco;
+}
+
+void deletar_bloco(Bloco* bloco) {
+    delete bloco->cabecalho;
+    delete bloco;
+}
+
+
+Bloco* inserir_registro_bloco(Bloco* bloco, Registro* registro){
+    if (bloco == nullptr || bloco->cabecalho == nullptr) {
+        cerr << "Erro: Bloco ou cabecalho do bloco não inicializado." << endl;
+        return nullptr;
+    }
+    int cursor = bloco->cabecalho->posicoes_registros[bloco->cabecalho->quantidade_registros];
+    memcpy(&bloco->dados[cursor], &registro->id, sizeof(int));
+    cursor += sizeof(int);
+    memcpy(&bloco->dados[cursor], registro->title.c_str(), registro->title.size() + 1);
+    cursor += registro->title.size() + 1;
+    memcpy(&bloco->dados[cursor], &registro->year, sizeof(int));
+    cursor += sizeof(int);
+    memcpy(&bloco->dados[cursor], registro->authors.c_str(), registro->authors.size() + 1);
+    cursor += registro->authors.size() + 1;
+    memcpy(&bloco->dados[cursor], &registro->citations, sizeof(int));
+    cursor += sizeof(int);
+    memcpy(&bloco->dados[cursor], registro->update.c_str(), registro->update.size() + 1);
+    cursor += registro->update.size() + 1;
+    memcpy(&bloco->dados[cursor], registro->snippet.c_str(), registro->snippet.size() + 1);
+    cursor += registro->snippet.size() + 1;
+
+    bloco->cabecalho->quantidade_registros++;
+    bloco->cabecalho->tamanho_disponivel -= registro->ocupacao;
+    bloco->cabecalho->posicoes_registros[bloco->cabecalho->quantidade_registros] = cursor;
+    return bloco;
+}
+
+#endif
