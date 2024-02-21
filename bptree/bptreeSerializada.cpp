@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cstdio>
 #include <cassert>
+#include <stack>
 #include "../estruturas/estruturaBlocoRegistro.hpp"
 
 //Registro que será usado na árvore
@@ -381,7 +382,118 @@ public:
             }
         } 
     }
+    void transferir_arvore_bin(const string& nome_arquivo_bin){
+        ofstream arquivo_bin(nome_arquivo_bin, ios::binary | ios::out);
+        if(arquivo_bin){
+            arquivo_bin.write(reinterpret_cast<char*>(&this->grau), sizeof(this->grau));
+
+            stack<No<RegistroBPT>* pilha_no;
+            pilha_no.push(this->raiz);
+            No<RegistroBPT> cursor*;
+
+            while(!pilha_no.empty()){
+                cursor = pilha_no.top();
+                pilha_no.pop();
+
+                file.write(reinterpret_cast<const char*>(&cursor.folha), sizeof(cursor.folha));
+                file.write(reinterpret_cast<const char*>(&cursor.ocupacao), sizeof(cursor.folha));
+                file.write(reinterpret_cast<const char*>(cursor.registros), size_t(RegistroBPT) * (cursor.grau - 1));
+
+                if(!cursor.folha){
+                    for(int i = 0; i <= cursor.ocupacao; i++){
+                        pilha_no.push(cursor.filhos[i]);
+                    }
+                }
+            }
+            arquivo_bin.close(); 
+        } else {
+            cout<<"Aconteceu algum erro com o arquivo binario\n";
+        }
+    }
+
+    BPlusTree trazer_arvore_bin(const string& nome_arquivo_bin){
+        ifstream arquivo_bin(nome_arquivo_bin, ios::binary | ios::in);
+        if(arquivo_bin){
+            size_t grau;
+            if(!arquivo_bin.read(reinterpret_cast<char*>(&grau), sizeof(grau))){
+                cout<<"Aconteceu um erro com a leitura do arquivo\n";
+                arquivo_bin.close();
+                return BPlusTree(0);
+            }
+
+            BPlusTree arvore_transferida(grau);
+
+            stack<pair<No<RegistroBPT>*, No<RegistroBPT>*>> pilha_no;
+            pilha_no.push({nullptr, arvore_transferida->raiz});
+
+            while (!pilha_no.empty()) {
+                auto [ancestral, cursor] = pilha_no.top();
+                pilha_no.pop();
+
+                // Ler as informações do nó do arquivo
+                bool folha;
+                size_t ocupacao;
+                if (!file.read(reinterpret_cast<char*>(&folha), sizeof(folha)) ||
+                    !file.read(reinterpret_cast<char*>(&ocupacao), sizeof(ocupacao))) {
+                    cerr << "Error reading node information from file." << endl;
+                    arquivo_bin.close();
+                    destroyNode(arvore_transferida->raiz); // Liberar a memória alocada
+                    return BPlusTree(0);    // Retornar uma árvore B+ vazia
+                }
+
+                // Criar um novo nó
+                auto* aux = new No<RegArvore>(grau);
+                aux->folha = folha;
+                aux->ocupacao = ocupacao;
+                aux->ancestral = ancestral;
+
+                // Ler os itens do nó do arquivo
+                aux->registros = new RegistroBPT[grau - 1];
+                if (!file.read(reinterpret_cast<char*>(aux->item), sizeof(RegistroBPT) * (grau - 1))) {
+                    cerr << "Error reading node items from file." << endl;
+                    file.close();
+                    destroyNode(arvore_transferida->raiz); // Liberar a memória alocada
+                    delete[] aux->item;
+                    delete aux;
+                    return BPlusTree(0);    // Retornar uma árvore B+ vazia
+                }
+
+                if (!folha) {
+                    // Adicionar os nós filhos à pilha
+                    aux->filhos = new No<RegistroBPT>*[grau];
+                    for (size_t i = 0; i <= ocupacao; ++i) {
+                        pilha_no.push({aux, aux->filhos[i]});
+                    }
+                }
+
+                // Atualizar o ponteiro do pai para os filhos
+                if (ancestral) {
+                    ancestral->filhos[ocupacao] = aux;
+                } else {
+                    // Atualizar o nó raiz
+                    arvore_transferida->raiz = aux;
+                }
+            }
+
+        } else {
+            cout<<"Aconteceu algum erro com o arquivo binário\n";
+        }
+    }
+
 };
+
+
+
+/* void gerar_arvore_bin(const string& nome_arquivo_bin){
+    ofstream arquivo_bin(nome_arquivo_bin, ios::binary | ios::out);
+    if(arquivo_bin){
+
+    } else {
+        cout<<"Aconteceu algum erro com o arquivo binario\n";
+    }
+} */
+
+
 
 #endif
 
