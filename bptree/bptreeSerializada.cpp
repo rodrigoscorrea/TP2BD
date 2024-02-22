@@ -46,7 +46,6 @@ public:
     }
 };
 
-template <typename T>
 class BPlusTree {
 public:
     No<RegistroBPT>* raiz;
@@ -57,9 +56,9 @@ public:
         this->raiz = nullptr;
         this->grau = _grau;
     }
-    ~BPlusTree() {
+    /* ~BPlusTree() {
         deletar(this->raiz);
-    }
+    } */
 
     No<RegistroBPT>* get_raiz(){
         return this->raiz;
@@ -118,9 +117,9 @@ public:
         }
     }
     
-    bool busca(int chave_busca) {  //checa se registro existe ou não
-        return busca_BPlusTree(this->raiz, RegistroBPT(chave_busca,0)) != nullptr;
-    }
+    /* No<RegistroBPT>* busca(int chave_busca) {  //checa se registro existe ou não
+        return busca_BPlusTree(this->raiz, RegistroBPT(chave_busca,0));
+    } */
 
     int busca_index(RegistroBPT* registros, RegistroBPT registro_buscado, int tamanho){
         int index_registros = 0;
@@ -345,7 +344,7 @@ public:
         }
     }
 
-    void deletar(No<RegistroBPT>* cursor){
+    /* void deletar(No<RegistroBPT>* cursor){
         if(cursor != nullptr){
             if(!cursor->folha){
                 for(int i=0; i <= cursor->ocupacao; i++){
@@ -359,7 +358,7 @@ public:
         } else {
             std::cout<<"Arvore deletada\n";
         }
-    }
+    } */
     void imprimir_arvore(){
         imprimir_no(this->raiz);
     }
@@ -412,7 +411,7 @@ public:
     }
 
     
-    /* void serializeBPlusTree(const BPlusTree& tree, const string& filename) {
+    void serializeBPlusTree(const BPlusTree& tree, const string& filename) {
         ofstream file(filename, ios::binary | ios::out);
         if (!file) {
             cerr << "Error opening file for serialization: " << filename << endl;
@@ -446,7 +445,7 @@ public:
                 serializeNode(file, node->filhos[i]);
             }
         }
-    } */
+    } 
 
     No<RegistroBPT>* deserializeNode(ifstream& file, No<RegistroBPT>* parent, size_t degree) {
         // Ler as informações do nó do arquivo
@@ -460,32 +459,31 @@ public:
 
         // Criar um novo nó
         auto* node = new No<RegistroBPT>(degree);
-        node->is_leaf = is_leaf;
-        node->size = size;
-        node->parent = parent;
+        node->folha = is_leaf;
+        node->ocupacao = size;
+        node->ancestral = parent;
 
         // Ler os itens do nó do arquivo
-        node->item = new RegistroBPT[degree - 1];
-        if (!file.read(reinterpret_cast<char*>(node->item), sizeof(RegistroBPT) * (degree - 1))) {
+        node->registros = new RegistroBPT[degree - 1];
+        if (!file.read(reinterpret_cast<char*>(node->registros), sizeof(RegistroBPT) * (degree - 1))) {
             cerr << "Error reading node items from file." << endl;
-            delete[] node->item;
+            delete[] node->registros;
             delete node;
             return nullptr;
         }
 
         if (!is_leaf) {
             // Desserializar os nós filhos recursivamente
-            node->children = new No<RegistroBPT>*[degree];
+            node->filhos = new No<RegistroBPT>*[degree];
             for (size_t i = 0; i <= size; ++i) {
-                node->children[i] = deserializeNode(file, node, degree);
-                if (!node->children[i]) {
+                node->filhos[i] = deserializeNode(file, node, degree);
+                if (!node->filhos[i]) {
                     cerr << "Error deserializing child node from file." << endl;
                     destroyNode(node); // Liberar a memória alocada
                     return nullptr;
                 }
             }
         }
-
         return node;
     }
     void destroyNode(No<RegistroBPT>* node) {
@@ -520,8 +518,8 @@ public:
         BPlusTree tree(degree);
 
         // Desserializar a árvore recursivamente, começando pelo nó raiz
-        tree.root = deserializeNode(file, nullptr, degree);
-        if (!tree.root) {
+        tree.raiz = deserializeNode(file, nullptr, degree);
+        if (!tree.raiz) {
             cerr << "Error deserializing root node from file: " << filename << endl;
             file.close();
             return BPlusTree(0);  // Retornar uma árvore B+ vazia
@@ -614,7 +612,7 @@ public:
 int main(int argc, char const* argv[]){
     const int max = 3;
     //TESTE COM ARVORE EM MEMÓRIA 
-    BPlusTree<RegistroBPT*>arvoreTeste(max);
+    BPlusTree arvoreTeste(max);
     RegistroBPT* reg1 = new RegistroBPT(5,4);
     RegistroBPT* reg2 = new RegistroBPT(10,2);
     RegistroBPT* reg3 = new RegistroBPT(15,7);
@@ -632,8 +630,8 @@ int main(int argc, char const* argv[]){
     /* arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 25)); //versão nova, busca via valor direto
     arvoreTeste.imprimir_arvore(); */
     const string nome_arquivo = "indice.bin";
-    arvoreTeste.transferir_arvore_bin(nome_arquivo);
+    arvoreTeste.serializeBPlusTree(arvoreTeste, nome_arquivo);
     
-    BPlusTree<RegistroBPT> novaArvore = novaArvore.trazer_arvore_bin("indice.bin");
-    novaArvore.imprimir_arvore();
+    BPlusTree novaArvore = novaArvore.deserializeBPlusTree("indice.bin");
+    novaArvore.imprimir_no(novaArvore.raiz);
 } 
