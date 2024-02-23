@@ -70,7 +70,7 @@ hashTable::hashTable(string nomeArquivo)
     }
 }
 
-int hashTable::funcaoHash(int id){ return id%BUCKETS;}
+int hashTable::funcaoHash(int id){ return (id * 104729) % BUCKETS;}
 
 void hashTable::inserirRegistroBucket(Registro* registro) 
 {

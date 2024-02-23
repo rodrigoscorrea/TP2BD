@@ -100,7 +100,7 @@ vector<Registro*> ler_arquivo_csv(const string& nome_arquivo)
 int main(int argc, char const *argv[])
 {
     // UPLOAD
-    const string nome_arquivo = "../teste1.csv";
+    const string nome_arquivo = "../teste2.csv";
     vector<Registro*> registros = ler_arquivo_csv(nome_arquivo);
     hashTable Hash = hashTable("arquivoDados.bin");
 
