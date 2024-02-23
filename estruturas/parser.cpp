@@ -2,20 +2,53 @@
 #include <fstream>
 #include <sstream>
 #include "./estruturaBlocoRegistro.hpp"
-#include "../hash/hashtable.cpp"
+#include "../hash/hashTable.cpp"
+
 using namespace std;
 
-vector<Registro*> ler_arquivo_csv(const string& nome_arquivo) {
+std::string normalizar_string(std::string str) {
+    for (char &c : str) {
+        if (static_cast<unsigned char>(c) > 127) {
+            c = ' ';
+        }
+    }
+
+    std::string result;
+    bool inSpace = false;
+    for (char c : str) {
+        if (std::isspace(c)) {
+            if (!inSpace) {
+                result += ' ';
+                inSpace = true;
+            }
+        } else {
+            result += c;
+            inSpace = false;
+        }
+    }
+
+    size_t start = result.find_first_not_of(' ');
+    if (start == std::string::npos) return ""; // String é apenas espaços
+    size_t end = result.find_last_not_of(' ');
+
+    return result.substr(start, end - start + 1);
+}
+
+
+vector<Registro*> ler_arquivo_csv(const string& nome_arquivo)
+{
     vector<Registro*> registros;
 
-    ifstream arquivo(nome_arquivo);
-    if (!arquivo.is_open()) {
+    ifstream arquivo(nome_arquivo, ios::in);
+    if (!arquivo.is_open())
+    {
         cerr << "Nao foi possivel abrir o arquivo: " << nome_arquivo << "\n";
         return registros;
     }
 
     string linha;
-    while (getline(arquivo, linha)) {
+    while (getline(arquivo, linha))
+    {
         stringstream linha_analisada(linha);
         string dado;
 
@@ -51,6 +84,11 @@ vector<Registro*> ler_arquivo_csv(const string& nome_arquivo) {
         getline(linha_analisada, dado, '"');
         snippet = dado;
 
+        title = normalizar_string(title);
+        authors = normalizar_string(authors);
+        update = normalizar_string(update);
+        snippet = normalizar_string(snippet);
+
         Registro* novo_registro = criar_registro(id, title, year, authors, citations, update, snippet);
         registros.push_back(novo_registro);
     }
@@ -59,18 +97,22 @@ vector<Registro*> ler_arquivo_csv(const string& nome_arquivo) {
     return registros;
 }
 
-int main(){ //quase o findrec, no fim isso não vai estar aqui
-    const string nome_arquivo = "../teste2.csv";
+int main(int argc, char const *argv[])
+{
+    // UPLOAD
+    const string nome_arquivo = "../teste1.csv";
     vector<Registro*> registros = ler_arquivo_csv(nome_arquivo);
     hashTable Hash = hashTable("arquivoDados.bin");
 
     for (const auto& registro : registros) {
         Hash.inserirRegistroBucket(registro);
     }
+    // FIM UPLOAD
 
-    imprimir_registro(Hash.busca_registro_hashtable(428050));
+    imprimir_registro(Hash.busca_registro_hashtable(std::atoi(argv[1])));
 
-    for (auto& registro : registros) {
+    for (auto& registro : registros)
+    {
         delete registro;
     } 
 

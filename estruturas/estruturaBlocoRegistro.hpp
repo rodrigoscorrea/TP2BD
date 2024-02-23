@@ -1,7 +1,8 @@
 #ifndef BLOCOREGISTRO_HPP
 #define BLOCOREGISTRO_HPP
+
 #define TAM_BLOCO 4096
-#define X 18
+#define X 16
 
 #include <iostream>
 #include <fstream>
@@ -10,7 +11,8 @@
 
 using namespace std;
 
-struct Registro{
+struct Registro
+{
     int id;
     string title;
     int year;
@@ -21,20 +23,23 @@ struct Registro{
     int ocupacao;
 };
 
-struct Cabecalho_Bloco{
+struct Cabecalho_Bloco
+{
     int quantidade_registros;
     int tamanho_disponivel;
     int posicoes_registros[X];
     
 };
 
-struct Bloco {
+struct Bloco
+{
     Cabecalho_Bloco* cabecalho;
-    Registro* dados[TAM_BLOCO];
+    char dados[TAM_BLOCO];
 };
 
 //Funções para Registro
-Registro* criar_registro(int id, string title, int year, string authors, int citations, string update, string snippet) {
+Registro* criar_registro(int id, string title, int year, string authors, int citations, string update, string snippet)
+{
     Registro* registro = new Registro();
     registro->id = id;
     registro->title = title;
@@ -43,11 +48,23 @@ Registro* criar_registro(int id, string title, int year, string authors, int cit
     registro->citations = citations;
     registro->update = update;
     registro->snippet = snippet;
-    registro->ocupacao = registro->title.size() + 4 + sizeof(int) + sizeof(int) + registro->authors.size() + sizeof(int) + sizeof(int) + registro->update.size() + registro->snippet.size();
+    registro->ocupacao = sizeof(int) // id
+                       + title.size() + 1 // Tamanho da string title + caractere nulo
+                       + sizeof(int) // year
+                       + authors.size() + 1 // Tamanho da string authors + caractere nulo
+                       + sizeof(int) // citations
+                       + update.size() + 1 // Tamanho da string update + caractere nulo
+                       + snippet.size() + 1; // Tamanho da string snippet + caractere nulo
     return registro;
 }
 
-void imprimir_registro(Registro* registro) {
+void imprimir_registro(Registro* registro)
+{
+    if (registro == NULL)
+    {
+        std::cout << "Registro NULL"<< "\n";
+        return;
+    }
     std::cout << "\nId: " << registro->id << "\n";
     std::cout << "Titulo: " << registro->title << "| Ano: " << registro->year <<"\n";
     std::cout << "Autores: " << registro->authors << "\n";
@@ -57,7 +74,8 @@ void imprimir_registro(Registro* registro) {
 
 }
 
-Registro* preencher_registro(Registro* registro, Bloco* bloco, int cursor){
+Registro* preencher_registro(Registro* registro, Bloco* bloco, int cursor)
+{
     registro->title = string((char *)&bloco->dados[cursor]);
     cursor += registro->title.size() + 1;
 
@@ -80,34 +98,41 @@ Registro* preencher_registro(Registro* registro, Bloco* bloco, int cursor){
 }
 
 //Funções para Bloco
-Cabecalho_Bloco* criar_cabecalho_bloco() {
+Cabecalho_Bloco* criar_cabecalho_bloco()
+{
     Cabecalho_Bloco* novo_cabecalho = new Cabecalho_Bloco();
     novo_cabecalho->quantidade_registros = 0;
-    for (int i = 0; i < X; i++) {
+    for (int i = 0; i < X; i++)
+    {
         novo_cabecalho->posicoes_registros[i] = 0;
     }
-    novo_cabecalho->tamanho_disponivel = TAM_BLOCO - sizeof(int) * 18 - sizeof(int) * 2;
+    novo_cabecalho->tamanho_disponivel = TAM_BLOCO;
 
     return novo_cabecalho;
 }
 
-Bloco* criar_bloco() {
+Bloco* criar_bloco()
+{
     Bloco* novo_bloco = new Bloco();
     novo_bloco->cabecalho = criar_cabecalho_bloco();
-    for(int i = 0; i < TAM_BLOCO; i++) {
+    for (int i = 0; i < TAM_BLOCO; i++)
+    {
         novo_bloco->dados[i] = 0;
     }
     return novo_bloco;
 }
 
-void deletar_bloco(Bloco* bloco) {
+void deletar_bloco(Bloco* bloco)
+{
     delete bloco->cabecalho;
     delete bloco;
 }
 
 
-Bloco* inserir_registro_bloco(Bloco* bloco, Registro* registro){
-    if (bloco == nullptr || bloco->cabecalho == nullptr) {
+Bloco* inserir_registro_bloco(Bloco* bloco, Registro* registro)
+{
+    if (bloco == nullptr || bloco->cabecalho == nullptr) 
+    {
         cerr << "Erro: Bloco ou cabecalho do bloco não inicializado." << endl;
         return nullptr;
     }
