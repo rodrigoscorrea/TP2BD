@@ -1,4 +1,5 @@
 .vscode/*
 *.json
 artigo.csv
-arquivo_de_dados.bin
+*.bin
+*.out
