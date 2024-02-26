@@ -8,6 +8,7 @@
 #include <cassert>
 #include <stack>
 #include "../estruturas/estruturaBlocoRegistro.hpp"
+#include <set>
 
 //Registro que será usado na árvore
 struct RegistroBPT{ //VERIFICAR DEPOIS SE DÁ PRA FAZER SETANDO AO INVÉS DOS DOIS PARA DIFERENCIAR MAIS AINDA
@@ -56,9 +57,6 @@ public:
         this->raiz = nullptr;
         this->grau = _grau;
     }
-    /* ~BPlusTree() {
-        deletar(this->raiz);
-    } */
 
     No<RegistroBPT>* get_raiz(){
         return this->raiz;
@@ -344,7 +342,7 @@ public:
         }
     }
 
-    /* void deletar(No<RegistroBPT>* cursor){
+    void deletar(No<RegistroBPT>* cursor){
         if(cursor != nullptr){
             if(!cursor->folha){
                 for(int i=0; i <= cursor->ocupacao; i++){
@@ -358,7 +356,7 @@ public:
         } else {
             std::cout<<"Arvore deletada\n";
         }
-    } */
+    }
     void imprimir_arvore(){
         imprimir_no(this->raiz);
     }
@@ -379,23 +377,31 @@ public:
                     imprimir_no(cursor->filhos[i]);
                 }
             }
-        } 
+        } else {
+            cout<<"No nulo\n";
+        }
     }
-    void transferir_arvore_bin(const string& nome_arquivo_bin){
+    void transferir_arvore_bin(const BPlusTree& tree, const string& nome_arquivo_bin){
         ofstream arquivo_bin(nome_arquivo_bin, ios::binary | ios::out);
         if(arquivo_bin){
-            arquivo_bin.write(reinterpret_cast<char*>(&this->grau), sizeof(this->grau));
+            size_t grau = tree.grau;
+            bool folha;
+            size_t ocupacao;
+            arquivo_bin.write(reinterpret_cast<char*>(&grau), sizeof(grau));
 
             stack<No<RegistroBPT>*> pilha_no;
-            pilha_no.push(this->raiz);
+            pilha_no.push(tree.raiz);
             No<RegistroBPT>* cursor;
 
             while(!pilha_no.empty()){
                 cursor = pilha_no.top();
                 pilha_no.pop();
 
-                arquivo_bin.write(reinterpret_cast<const char*>(&cursor->folha), sizeof(cursor->folha));
-                arquivo_bin.write(reinterpret_cast<const char*>(&cursor->ocupacao), sizeof(cursor->folha));
+                folha = cursor->folha;
+                ocupacao = cursor->ocupacao;
+
+                arquivo_bin.write(reinterpret_cast<const char*>(&folha), sizeof(folha));
+                arquivo_bin.write(reinterpret_cast<const char*>(&ocupacao), sizeof(ocupacao));
                 arquivo_bin.write(reinterpret_cast<const char*>(cursor->registros), sizeof(RegistroBPT) * (cursor->grau - 1));
 
                 if(!cursor->folha){
@@ -411,7 +417,7 @@ public:
     }
 
     
-    void serializeBPlusTree(const BPlusTree& tree, const string& filename) {
+    /* void serializeBPlusTree(const BPlusTree& tree, const string& filename) {
         ofstream file(filename, ios::binary | ios::out);
         if (!file) {
             cerr << "Error opening file for serialization: " << filename << endl;
@@ -424,7 +430,7 @@ public:
 
         // Serializar a árvore recursivamente, começando pelo nó raiz
         serializeNode(file, tree.raiz);
-
+        deletar(tree.raiz);
         file.close();
     }
 
@@ -445,7 +451,7 @@ public:
                 serializeNode(file, node->filhos[i]);
             }
         }
-    } 
+    } */
 
     No<RegistroBPT>* deserializeNode(ifstream& file, No<RegistroBPT>* parent, size_t degree) {
         // Ler as informações do nó do arquivo
@@ -529,10 +535,8 @@ public:
 
         return tree;
     }
-
     
-
-    /* BPlusTree trazer_arvore_bin(const string& nome_arquivo_bin){
+    /* BPlusTree trazer_arvore_bin(const BPlusTree& tree ,const string& nome_arquivo_bin){
         ifstream arquivo_bin(nome_arquivo_bin, ios::binary | ios::in);
         if(arquivo_bin){
             size_t grau;
@@ -542,20 +546,22 @@ public:
                 return BPlusTree(0);
             }
 
-            BPlusTree<RegistroBPT> arvore_transferida(grau);
+            BPlusTree arvore_transferida(grau);
 
             stack<pair<No<RegistroBPT>*, No<RegistroBPT>*>> pilha_no;
             pilha_no.push({nullptr, arvore_transferida.raiz});
-            auto topo_pilha = pilha_no.top();
-            No<RegistroBPT>* cursor = topo_pilha.second;
-            No<RegistroBPT>* ancestral = topo_pilha.first;
+            //auto topo_pilha = pilha_no.top();
+            No<RegistroBPT>* cursor;// = topo_pilha.second;
+            No<RegistroBPT>* ancestral;// = topo_pilha.first;
+            vector<RegistroBPT> vetor_disco;
+            set<RegistroBPT> set_insercao;
 
             while (!pilha_no.empty()) {
-                topo_pilha = pilha_no.top();
+                auto topo_pilha = pilha_no.top();
                 ancestral = topo_pilha.first;
                 cursor = topo_pilha.second;
                 pilha_no.pop();
-
+                
                 // Ler as informações do nó do arquivo
                 bool folha;
                 size_t ocupacao;
@@ -577,11 +583,14 @@ public:
                 aux->registros = new RegistroBPT[grau - 1];
                 if (!arquivo_bin.read(reinterpret_cast<char*>(aux->registros), sizeof(RegistroBPT) * (grau - 1))) {
                     cerr << "Error reading node registross from arquivo_bin." << endl;
-                    arquivo_bin.close();
-                    destroyNode(arvore_transferida.raiz); // Liberar a memória alocada
+                    //arquivo_bin.close();
+                    //destroyNode(arvore_transferida.raiz); // Liberar a memória alocada
                     delete[] aux->registros;
                     delete aux;
-                    return BPlusTree<RegistroBPT>(0);    // Retornar uma árvore B+ vazia
+                    return BPlusTree(0);    // Retornar uma árvore B+ vazia
+                } 
+                for(int j = 0; j < aux->ocupacao; j++){
+                    vetor_disco.push_back(aux->registros[j]);
                 }
 
                 if (!folha) {
@@ -589,11 +598,11 @@ public:
                     aux->filhos = new No<RegistroBPT>*[grau];
                     for (size_t i = 0; i <= ocupacao; ++i) {
                         pilha_no.push({aux, aux->filhos[i]});
-                    }
-                }
+                    } 
+                } 
 
                 // Atualizar o ponteiro do pai para os filhos
-                if (ancestral) {
+               /*  if (ancestral) {
                     ancestral->filhos[ocupacao] = aux;
                 } else {
                     // Atualizar o nó raiz
@@ -606,6 +615,7 @@ public:
             cout<<"Aconteceu algum erro com o arquivo binário\n";
         }
     } */
+
 };
 #endif
 
@@ -627,11 +637,11 @@ int main(int argc, char const* argv[]){
     arvoreTeste.inserir_arvore(reg5);
     arvoreTeste.inserir_arvore(reg6);
 
-    /* arvoreTeste.imprimir_no(arvoreTeste.busca_BPlusTree(arvoreTeste.get_raiz(), 25)); //versão nova, busca via valor direto
-    arvoreTeste.imprimir_arvore(); */
+    //arvoreTeste.imprimir_arvore();
     const string nome_arquivo = "indice.bin";
-    arvoreTeste.serializeBPlusTree(arvoreTeste, nome_arquivo);
-    
-    BPlusTree novaArvore = novaArvore.deserializeBPlusTree("indice.bin");
-    novaArvore.imprimir_no(novaArvore.raiz);
+    //arvoreTeste.serializeBPlusTree(arvoreTeste, nome_arquivo);
+    arvoreTeste.transferir_arvore_bin(arvoreTeste,nome_arquivo);
+    //BPlusTree novaArvore = novaArvore.deserializeBPlusTree("indice.bin");
+    BPlusTree novaArvore = novaArvore.deserializeBPlusTree(nome_arquivo);
+    novaArvore.imprimir_arvore();
 } 

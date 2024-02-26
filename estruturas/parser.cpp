@@ -61,7 +61,7 @@ vector<Registro*> ler_arquivo_csv(const string& nome_arquivo)
         id = stoi(dado);
 
         getline(linha_analisada, dado, '"');
-        getline(linha_analisada, dado, '"');
+        getline(linha_analisada, dado, ';');
         title = dado;
 
         getline(linha_analisada, dado, '"');

@@ -7,8 +7,7 @@ using namespace std;
 #define BUCKETS 1600
 #define BLOCOS 16
 
-struct Bucket
-{
+struct Bucket{
     Bloco* blocos[BLOCOS];
     int qtd_blocos;
 };
