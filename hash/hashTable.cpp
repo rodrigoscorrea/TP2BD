@@ -4,8 +4,8 @@
 #include "string"
 #include "../estruturas/estruturaBlocoRegistro.hpp"
 using namespace std;
-#define BUCKETS 1600
-#define BLOCOS 16
+#define BUCKETS 20023
+#define BLOCOS 23
 
 struct Bucket{
     Bloco* blocos[BLOCOS];
@@ -24,7 +24,7 @@ void inicializarBucket(ofstream& arquivoBin)
 {
     Bucket* bucket = new Bucket();
     bucket->qtd_blocos = 0;
-    for(int i=0; i < BLOCOS ; i++)
+    for (int i = 0; i < BLOCOS ; i++)
     {
         bucket->blocos[i] = criar_bloco();
         bucket->qtd_blocos++;
@@ -42,7 +42,7 @@ class hashTable
         ifstream arquivoIn;
     public:
         hashTable(string nomeArquivo);
-        int funcaoHash(int id);
+        int funcaoHash(unsigned int id);
         void inserirRegistroBloco(Bloco* bloco, Registro* reg);
         void inserirRegistroBucket(Registro* reg);
         Registro* busca_registro_hashtable(int id);
@@ -69,11 +69,17 @@ hashTable::hashTable(string nomeArquivo)
     }
 }
 
-int hashTable::funcaoHash(int id){ return (id * 104729) % BUCKETS;}
+int hashTable::funcaoHash(unsigned int id) { 
+    unsigned int primoAleatorio = 20021;
+    return (id * primoAleatorio) % BUCKETS;
+}
 
 void hashTable::inserirRegistroBucket(Registro* registro) 
 {
     int chave = funcaoHash(registro->id);
+
+    cout << "Chave: " << chave << " ID: " << registro->id << endl;
+
     bool regInserido = false;
 
     streampos posicao = this->offsetsBucket[chave];
@@ -118,12 +124,12 @@ Registro* hashTable::busca_registro_hashtable(int id)
     int posicao_bucket = funcaoHash(id);
 
     streampos posicao = this->offsetsBucket[posicao_bucket];
+    this->arquivoIn.seekg(posicao);
 
     for (int i = 0; i < BLOCOS; i++) 
     {
         Bloco* bloco = criar_bloco();
 
-        this->arquivoIn.seekg(posicao);
         this->arquivoIn.read(reinterpret_cast<char*>(bloco->cabecalho), sizeof(Cabecalho_Bloco));
         this->arquivoIn.read(reinterpret_cast<char*>(bloco->dados), TAM_BLOCO);
 
@@ -150,6 +156,7 @@ Registro* hashTable::busca_registro_hashtable(int id)
 
         deletar_bloco(bloco);
         posicao += sizeof(Cabecalho_Bloco) + TAM_BLOCO;
+        this->arquivoIn.seekg(posicao);
     }
 
     cout << "Registro nao encontrado no arquivo" << endl;

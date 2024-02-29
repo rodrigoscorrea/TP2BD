@@ -6,9 +6,28 @@
 
 using namespace std;
 
-std::string normalizar_string(std::string str) {
-    for (char &c : str) {
-        if (static_cast<unsigned char>(c) > 127) {
+void getUntilLastQuote(std::istream& stream, std::string& result)
+{
+    result.clear();
+    char ch;
+
+    while (stream.get(ch))
+    {
+        if (ch == '"' && stream.peek() == ';')
+        {
+            stream.get();
+            break;
+        }
+        result += ch;
+    }
+}
+
+std::string normalizar_string(std::string str)
+{
+    for (char &c : str)
+    {
+        if (static_cast<unsigned char>(c) > 127 || c == '\n' || c == '\"')
+        {
             c = ' ';
         }
     }
@@ -16,12 +35,15 @@ std::string normalizar_string(std::string str) {
     std::string result;
     bool inSpace = false;
     for (char c : str) {
-        if (std::isspace(c)) {
-            if (!inSpace) {
+        if (std::isspace(c))
+        {
+            if (!inSpace)
+            {
                 result += ' ';
                 inSpace = true;
             }
-        } else {
+        } else
+        {
             result += c;
             inSpace = false;
         }
@@ -35,15 +57,13 @@ std::string normalizar_string(std::string str) {
 }
 
 
-vector<Registro*> ler_arquivo_csv(const string& nome_arquivo)
+void ler_arquivo_csv(const string& nome_arquivo, hashTable& hash)
 {
-    vector<Registro*> registros;
-
     ifstream arquivo(nome_arquivo, ios::in);
     if (!arquivo.is_open())
     {
         cerr << "Nao foi possivel abrir o arquivo: " << nome_arquivo << "\n";
-        return registros;
+        return;
     }
 
     string linha;
@@ -55,66 +75,71 @@ vector<Registro*> ler_arquivo_csv(const string& nome_arquivo)
         int id, year, citations;
         string title, authors, update, snippet;
 
-        // Cada getline para cada aspas
-        getline(linha_analisada, dado, '"');  
-        getline(linha_analisada, dado, '"');
-        id = stoi(dado);
+        try
+        {
+            getline(linha_analisada, dado, '"');
+            getUntilLastQuote(linha_analisada, dado);
+            id = stoi(dado);
 
-        getline(linha_analisada, dado, '"');
-        getline(linha_analisada, dado, ';');
-        title = dado;
+            getline(linha_analisada, dado, '"');
+            getUntilLastQuote(linha_analisada, dado);
+            title = dado;
 
-        getline(linha_analisada, dado, '"');
-        getline(linha_analisada, dado, '"');
-        year = stoi(dado);
+            getline(linha_analisada, dado, '"');
+            getUntilLastQuote(linha_analisada, dado);
+            year = stoi(dado);
 
-        getline(linha_analisada, dado, '"');
-        getline(linha_analisada, dado, '"');
-        authors = dado;
+            getline(linha_analisada, dado, '"');
+            getUntilLastQuote(linha_analisada, dado);
+            authors = dado;
 
-        getline(linha_analisada, dado, '"');
-        getline(linha_analisada, dado, '"');
-        citations = stoi(dado);
+            getline(linha_analisada, dado, '"');
+            getUntilLastQuote(linha_analisada, dado);
+            citations = stoi(dado);
 
-        getline(linha_analisada, dado, '"');
-        getline(linha_analisada, dado, '"');
-        update = dado;
+            getline(linha_analisada, dado, '"');
+            getUntilLastQuote(linha_analisada, dado);
+            update = dado;
 
-        getline(linha_analisada, dado, '"');
-        getline(linha_analisada, dado, '"');
-        snippet = dado;
+            getline(linha_analisada, dado, '"');
+            getUntilLastQuote(linha_analisada, dado);
+            snippet = dado;
 
-        title = normalizar_string(title);
-        authors = normalizar_string(authors);
-        update = normalizar_string(update);
-        snippet = normalizar_string(snippet);
+            title = normalizar_string(title);
+            authors = normalizar_string(authors);
+            update = normalizar_string(update);
+            snippet = normalizar_string(snippet);
 
-        Registro* novo_registro = criar_registro(id, title, year, authors, citations, update, snippet);
-        registros.push_back(novo_registro);
+            Registro* novo_registro = criar_registro(id, title, year, authors, citations, update, snippet);
+            hash.inserirRegistroBucket(novo_registro);
+        } catch (const std::exception& e)
+        {
+            std::cerr << "Caught an exception: " << e.what() << " " << id << std::endl;
+        }
     }
     arquivo.close();
 
-    return registros;
+    return;
 }
 
 int main(int argc, char const *argv[])
 {
     // UPLOAD
-    const string nome_arquivo = "../teste2.csv";
-    vector<Registro*> registros = ler_arquivo_csv(nome_arquivo);
+    const string nome_arquivo = argv[2];
     hashTable Hash = hashTable("arquivoDados.bin");
 
-    for (const auto& registro : registros) {
-        Hash.inserirRegistroBucket(registro);
-    }
+    cout << "Iniciando leitura csv" << endl;
+
+    ler_arquivo_csv(nome_arquivo, Hash);
+
+    cout << "Fim de leitura csv" << endl;
+
+    cout << "Iniciando leitura arquivo binario" << endl;
+
+    cout << "Fim de leitura arquivo binario" << endl;
     // FIM UPLOAD
 
     imprimir_registro(Hash.busca_registro_hashtable(std::atoi(argv[1])));
-
-    for (auto& registro : registros)
-    {
-        delete registro;
-    } 
 
     return 0;
 }
