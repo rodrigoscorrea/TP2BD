@@ -39,13 +39,13 @@ class hashTable
     private:
         streampos offsetsBucket[BUCKETS]; 
         ofstream arquivoBin;
-        ifstream arquivoIn;
     public:
         hashTable(string nomeArquivo);
         int funcaoHash(unsigned int id);
         void inserirRegistroBloco(Bloco* bloco, Registro* reg);
-        void inserirRegistroBucket(Registro* reg);
+        int inserirRegistroBucket(Registro* reg);
         Registro* busca_registro_hashtable(int id);
+        ifstream arquivoIn;
 };
 
 hashTable::hashTable(string nomeArquivo)
@@ -74,15 +74,12 @@ int hashTable::funcaoHash(unsigned int id) {
     return (id * primoAleatorio) % BUCKETS;
 }
 
-void hashTable::inserirRegistroBucket(Registro* registro) 
+int hashTable::inserirRegistroBucket(Registro* registro) 
 {
     int chave = funcaoHash(registro->id);
-
-    cout << "Chave: " << chave << " ID: " << registro->id << endl;
-
     bool regInserido = false;
-
     streampos posicao = this->offsetsBucket[chave];
+
     this->arquivoIn.seekg(posicao);
 
     for (int i = 0; i < BLOCOS && !regInserido; i++) 
@@ -92,9 +89,13 @@ void hashTable::inserirRegistroBucket(Registro* registro)
         this->arquivoIn.read(reinterpret_cast<char*>(bloco->cabecalho), sizeof(Cabecalho_Bloco));
         this->arquivoIn.read(reinterpret_cast<char*>(bloco->dados), TAM_BLOCO);
 
-        if (bloco->cabecalho->tamanho_disponivel >= registro->ocupacao) {
+        if (bloco->cabecalho->tamanho_disponivel >= registro->ocupacao) 
+        {
+            int endereco = (int) posicao + (int) sizeof(Cabecalho_Bloco) + bloco->cabecalho->posicoes_registros[bloco->cabecalho->quantidade_registros];
+            
             // Inserir registro no bloco
             bloco = inserir_registro_bloco(bloco, registro);
+            
             regInserido = true;
 
             // Preparar buffer para escrever no arquivo
@@ -103,8 +104,11 @@ void hashTable::inserirRegistroBucket(Registro* registro)
             memcpy(buffer + sizeof(Cabecalho_Bloco), bloco->dados, TAM_BLOCO);
 
             // Escrever bloco de volta no arquivo
+
             this->arquivoBin.seekp(posicao);
             this->arquivoBin.write(reinterpret_cast<char*>(buffer), TAM_BLOCO + sizeof(Cabecalho_Bloco));
+
+            return endereco;
         }
 
         deletar_bloco(bloco);
@@ -117,6 +121,8 @@ void hashTable::inserirRegistroBucket(Registro* registro)
     {
         cout << "Overflow" << endl;
     }
+
+    return -1;
 }
 
 Registro* hashTable::busca_registro_hashtable(int id) 
