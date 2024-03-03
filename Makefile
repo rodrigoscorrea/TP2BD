@@ -1,7 +1,7 @@
 all: upload findrec seek1 seek2
 
 upload: upload.cpp
-	g++ -o upload upload.cpp
+	g++ -o upload upload.cpp -O2
 
 findrec: findrec.cpp
 	g++ -o findrec findrec.cpp

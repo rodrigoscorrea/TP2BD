@@ -14,8 +14,8 @@
 struct RegistroBPT
 { // VERIFICAR DEPOIS SE DÁ PRA FAZER SETANDO AO INVÉS DOS DOIS PARA DIFERENCIAR MAIS AINDA
     int chave;
-    int valor;
-    RegistroBPT(int chave, int valor) : chave(chave), valor(valor) {}
+    size_t valor;
+    RegistroBPT(int chave, size_t valor) : chave(chave), valor(valor) {}
     RegistroBPT() : chave(0), valor(0) {} 
 };
 
@@ -471,7 +471,6 @@ public:
         if (!file.read(reinterpret_cast<char*>(node->registros), sizeof(RegistroBPT) * (degree - 1)))
         {
             cerr << "Error reading node items from file." << endl;
-            delete[] node->registros;
             delete node;
             return nullptr;
         }

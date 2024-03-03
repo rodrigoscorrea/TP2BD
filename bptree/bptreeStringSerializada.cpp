@@ -14,8 +14,8 @@
 struct RegistroString
 { // VERIFICAR DEPOIS SE DÁ PRA FAZER SETANDO AO INVÉS DOS DOIS PARA DIFERENCIAR MAIS AINDA
     string chave;
-    int valor;
-    RegistroString(string chave, int valor) : chave(chave), valor(valor) {}
+    size_t valor;
+    RegistroString(string chave, size_t valor) : chave(chave), valor(valor) {}
     RegistroString() : chave(""), valor(0) {}
 };
 
@@ -478,7 +478,7 @@ public:
             file.read(reinterpret_cast<char*>(&chave_size), sizeof(chave_size));
             string chave(chave_size, '\0');
             file.read(&chave[0], chave_size);
-            int valor;
+            size_t valor;
             file.read(reinterpret_cast<char*>(&valor), sizeof(valor));
             node->registros[i] = RegistroString(chave, valor);
         }

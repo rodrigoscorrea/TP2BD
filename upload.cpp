@@ -62,14 +62,18 @@ void ler_arquivo_csv(const string& nome_arquivo, hashTable& hash, BPlusTree& arv
             snippet = normalizar_string(snippet);
 
             Registro* novo_registro = criar_registro(id, title, year, authors, citations, update, snippet);
-            int posicao = hash.inserirRegistroBucket(novo_registro);
+            size_t posicao = hash.inserirRegistroBucket(novo_registro);
+
+            cout << posicao << endl;
 
             arvore1.inserir_arvore(new RegistroBPT(id, posicao));
             arvore2.inserir_arvore_s(new RegistroString(title, posicao));
+            
+            delete novo_registro;
         } 
         catch (const std::exception& e)
         {
-            std::cerr << "Caught an exception: " << e.what() << " " << id << std::endl;
+            //std::cerr << "Caught an exception: " << e.what() << " " << id << std::endl;
         }
     }
     arquivo.close();

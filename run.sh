@@ -5,16 +5,25 @@ echo "Arquivo de dados organizado por hashing"
 echo "Arquivo de índice primário usando uma B+Tree armazenada em memória secundária"
 echo "Arquivo de índice secundário usando uma outra B+Tree em memória secundária"
 echo "Digite o nome do arquivo de entrada:"
-./upload
+read file
+./upload "$file"
+echo ""
 
 echo "2. findrec <ID>: Programa que busca diretamente no arquivo de dados por um registro com o ID informado e, se existir, retorna os campos do registro, a quantidade de blocos lidos para encontrá-lo e a quantidade total de blocos do arquivo de dados;"
 echo "Digite o id de busca:"
-./findrec
+read id
+./findrec "$id"
+echo ""
+
 
 echo "3. seek1 <ID>: Programa que devolve o registro com ID igual ao informado, se existir, pesquisando através do arquivo de índice primário, mostrando todos os campos, a quantidade de blocos lidos para encontrá-lo no arquivo de índice e a quantidade total de blocos do arquivo de índice primário;"
 echo "Digite o id de busca:"
-./seek1
+read id
+./seek1 "$id"
+echo ""
 
 echo "4. seek2 <Titulo>: Programa que mostra os dados do registro que possua o Título igual ao informado, se existir, pesquisando através do arquivo de índice secundário, informando a quantidade de blocos lidos para encontrá-lo no arquivo de índice e a quantidade total de blocos do arquivo de índice secundário"
 echo "Digite o título da busca:"
-./seek2
+read title
+./seek2 "$title"
+echo ""

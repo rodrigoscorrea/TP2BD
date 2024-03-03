@@ -34,7 +34,7 @@ struct Cabecalho_Bloco
 struct Bloco
 {
     Cabecalho_Bloco* cabecalho;
-    char dados[TAM_BLOCO];
+    char dados[TAM_BLOCO - sizeof(Cabecalho_Bloco)];
 };
 
 //Funções para Registro
@@ -106,7 +106,7 @@ Cabecalho_Bloco* criar_cabecalho_bloco()
     {
         novo_cabecalho->posicoes_registros[i] = 0;
     }
-    novo_cabecalho->tamanho_disponivel = TAM_BLOCO;
+    novo_cabecalho->tamanho_disponivel = TAM_BLOCO - sizeof(Cabecalho_Bloco);
 
     return novo_cabecalho;
 }
@@ -115,7 +115,7 @@ Bloco* criar_bloco()
 {
     Bloco* novo_bloco = new Bloco();
     novo_bloco->cabecalho = criar_cabecalho_bloco();
-    for (int i = 0; i < TAM_BLOCO; i++)
+    for (int i = 0; i < TAM_BLOCO - sizeof(Cabecalho_Bloco); i++)
     {
         novo_bloco->dados[i] = 0;
     }
@@ -131,12 +131,7 @@ void deletar_bloco(Bloco* bloco)
 
 Bloco* inserir_registro_bloco(Bloco* bloco, Registro* registro)
 {
-    if (bloco == nullptr || bloco->cabecalho == nullptr) 
-    {
-        cerr << "Erro: Bloco ou cabecalho do bloco não inicializado." << endl;
-        return nullptr;
-    }
-    int cursor = bloco->cabecalho->posicoes_registros[bloco->cabecalho->quantidade_registros];
+    size_t cursor = bloco->cabecalho->posicoes_registros[bloco->cabecalho->quantidade_registros];
     memcpy(&bloco->dados[cursor], &registro->id, sizeof(int));
     cursor += sizeof(int);
     memcpy(&bloco->dados[cursor], registro->title.c_str(), registro->title.size() + 1);
