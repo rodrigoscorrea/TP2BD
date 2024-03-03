@@ -40,7 +40,7 @@ class hashTable
         streampos offsetsBucket[BUCKETS]; 
         ofstream arquivoBin;
     public:
-        hashTable(string nomeArquivo);
+        hashTable(string nomeArquivo, bool sobrescrever);
         int funcaoHash(unsigned int id);
         void inserirRegistroBloco(Bloco* bloco, Registro* reg);
         int inserirRegistroBucket(Registro* reg);
@@ -48,25 +48,31 @@ class hashTable
         ifstream arquivoIn;
 };
 
-hashTable::hashTable(string nomeArquivo)
-{
-    ofstream _arquivoBin(nomeArquivo, ios::binary | ios::out);
-    if (!arquivoBin)
+hashTable::hashTable(string nomeArquivo, bool sobrescrever = true)
+{   
+    if (sobrescrever) 
     {
-        cout << "Erro ao criar arquivo de dados" << endl;
+        ofstream _arquivoBin(nomeArquivo, ios::binary | ios::out);
+        if (!arquivoBin) cout << "Erro ao criar arquivo de dados" << endl;
+        
+        this->arquivoBin = move(_arquivoBin);
+
+        for (int i = 0; i < BUCKETS; i++)
+        {
+            this->offsetsBucket[i] = this->arquivoBin.tellp();
+            inicializarBucket(this->arquivoBin);
+        }
     }
-    this->arquivoBin = move(_arquivoBin);
-    ifstream _arquivoIn(nomeArquivo, ios::in);
-    if (!_arquivoIn)
+    else
     {
-        cout << "Erro ao abrir arquivo de entrada" << endl;
+        ifstream _arquivoIn(nomeArquivo, ios::in);
+        if (!_arquivoIn) cout << "Erro ao abrir arquivo de entrada" << endl;
+
+        this->arquivoIn = move(_arquivoIn);
+        for (int i = 0; i < BUCKETS; i++) this->offsetsBucket[i] = this->arquivoIn.tellg();
+
     }
-    this->arquivoIn = move(_arquivoIn);
-    for (int i = 0; i < BUCKETS; i++)
-    {
-        this->offsetsBucket[i] = this->arquivoBin.tellp();
-        inicializarBucket(this->arquivoBin);
-    }
+
 }
 
 int hashTable::funcaoHash(unsigned int id) { 
@@ -128,8 +134,8 @@ int hashTable::inserirRegistroBucket(Registro* registro)
 Registro* hashTable::busca_registro_hashtable(int id) 
 {
     int posicao_bucket = funcaoHash(id);
+    streampos posicao = posicao_bucket * (sizeof(Cabecalho_Bloco) + TAM_BLOCO) * BLOCOS;
 
-    streampos posicao = this->offsetsBucket[posicao_bucket];
     this->arquivoIn.seekg(posicao);
 
     for (int i = 0; i < BLOCOS; i++) 
@@ -153,6 +159,9 @@ Registro* hashTable::busca_registro_hashtable(int id)
                     cursor += sizeof(int);
                     preencher_registro(registro_aux, bloco, cursor);  
                     deletar_bloco(bloco);
+
+                    cout << "Quantidade de Blocos Lidos: " << (i + 1) << endl;
+                    cout << "Quantidade de Blocos Totais: " << BLOCOS * BUCKETS << endl;
                     return registro_aux;
                 }
 

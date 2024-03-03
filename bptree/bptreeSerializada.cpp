@@ -68,7 +68,7 @@ public:
 
     No<RegistroBPT>* get_raiz(){ return this->raiz; }
 
-    No<RegistroBPT>* busca_BPlusTree(No<RegistroBPT>* node, int chave_busca)
+    No<RegistroBPT>* busca_arvore(No<RegistroBPT>* node, int chave_busca)
     { // Raiz deve ser passada como parâmetro para node
         if (node == nullptr)
         { // Caso raiz nula
@@ -108,7 +108,7 @@ public:
         }
     }
 
-    No<RegistroBPT>* BPlusTreeRangeSearch(No<RegistroBPT>* node, RegistroBPT chave_busca)
+    No<RegistroBPT>* busca_arvore_alcance(No<RegistroBPT>* node, RegistroBPT chave_busca)
     { // Também usa raiz como parâmetro para node
         if (node == nullptr)
         { // Caso raiz nula
@@ -325,13 +325,13 @@ public:
             No<RegistroBPT>* cursor = this->raiz;
 
             // Ir até as folhas
-            cursor = BPlusTreeRangeSearch(cursor, registro_aux);
+            cursor = busca_arvore_alcance(cursor, registro_aux);
 
             if (cursor->ocupacao < (this->grau-1))
             { // Caso não haja overflow
-                cursor->registros = inserir_registro(cursor->registros,*registro_insercao,cursor->ocupacao);
+                cursor->registros = inserir_registro(cursor->registros, *registro_insercao, cursor->ocupacao);
                 cursor->ocupacao++;
-                cursor->filhos[cursor->ocupacao] = cursor->filhos[cursor->ocupacao-1];
+                cursor->filhos[cursor->ocupacao] = cursor->filhos[cursor->ocupacao - 1];
                 cursor->filhos[cursor->ocupacao-1] = nullptr;
             }
             else
@@ -340,14 +340,14 @@ public:
                 novo_no->folha = true;
                 novo_no->ancestral = cursor->ancestral;
 
-                RegistroBPT* registros_aux = new RegistroBPT[cursor->ocupacao+1];
+                RegistroBPT* registros_aux = new RegistroBPT[cursor->ocupacao + 1];
                 
-                for (int i=0; i<cursor->ocupacao; i++)
+                for (int i = 0; i < cursor->ocupacao; i++)
                 {
                     registros_aux[i] = cursor->registros[i];
                 }
 
-                registros_aux = inserir_registro(registros_aux,*registro_insercao,cursor->ocupacao);
+                registros_aux = inserir_registro(registros_aux, *registro_insercao, cursor->ocupacao);
 
                 // Dividir nós
                 cursor->ocupacao = (this->grau) / 2;
@@ -420,39 +420,36 @@ public:
         }
     }
 
-    void imprimir_arvore()
-    {
-        imprimir_no(this->raiz);
+    void imprimir_arvore() {
+        imprimir_no(this->raiz, 0, "");
     }
 
-    void imprime_registro(RegistroBPT registro)
-    {
-        std::cout<<"Chave: "<< registro.chave <<" Valor: "<< registro.valor <<"\n";
+    void imprime_registro(const RegistroBPT& registro, const std::string& prefixo) {
+        std::cout << prefixo << "Chave: " << registro.chave << " Valor: " << registro.valor << std::endl;
     }
 
-    void imprimir_no(No<RegistroBPT>* cursor)
-    {
-        if (cursor != NULL)
-        {
-            for (int i = 0; i < cursor->ocupacao; ++i)
-            {
-                imprime_registro(cursor->registros[i]);
-            }
+    void imprimir_no(No<RegistroBPT>* cursor, int nivel, const std::string& prefixo) {
+        if (cursor == NULL) {
+            std::cout << prefixo << "- <nó vazio>" << std::endl;
+            return;
+        }
 
-            if (cursor->folha == false)
-            {
-                for (int i = 0; i < cursor->ocupacao + 1; ++i)
-                {
-                    imprimir_no(cursor->filhos[i]);
-                }
+        std::string novo_prefixo = prefixo + (nivel > 0 ? "|  " : "");
+        std::string child_prefixo = novo_prefixo + "|--";
+
+        for (int i = 0; i < cursor->ocupacao; ++i) {
+            imprime_registro(cursor->registros[i], novo_prefixo);
+            if (!cursor->folha) {
+                imprimir_no(cursor->filhos[i], nivel + 1, child_prefixo);
             }
-        } else
-        {
-            cout<<"No nulo\n";
+        }
+
+        if (!cursor->folha) {
+            imprimir_no(cursor->filhos[cursor->ocupacao], nivel + 1, child_prefixo);
         }
     }
 
-    No<RegistroBPT>* deserializeNode(ifstream& file, No<RegistroBPT>* parent, size_t degree)
+    No<RegistroBPT>* desserializar_no(ifstream& file, No<RegistroBPT>* parent, size_t degree)
     {
         // Ler as informações do nó do arquivo
         bool is_leaf;
@@ -484,11 +481,11 @@ public:
             // Desserializar os nós filhos recursivamente
             node->filhos = new No<RegistroBPT>*[degree];
             for (size_t i = 0; i <= size; ++i) {
-                node->filhos[i] = deserializeNode(file, node, degree);
+                node->filhos[i] = desserializar_no(file, node, degree);
                 if (!node->filhos[i])
                 {
                     cerr << "Error deserializing child node from file." << endl;
-                    destroyNode(node); // Liberar a memória alocada
+                    destruir_no(node); // Liberar a memória alocada
                     return nullptr;
                 }
             }
@@ -496,7 +493,7 @@ public:
         return node;
     }
 
-    void destroyNode(No<RegistroBPT>* node)
+    void destruir_no(No<RegistroBPT>* node)
     {
         if (node)
         {
@@ -504,7 +501,7 @@ public:
             {
                 for (size_t i = 0; i <= node->ocupacao; ++i)
                 {
-                    destroyNode(node->filhos[i]);
+                    destruir_no(node->filhos[i]);
                 }
 
                 delete[] node->filhos;
@@ -515,7 +512,7 @@ public:
         }
     }
 
-    BPlusTree deserializeBPlusTree(const string& filename)
+    BPlusTree desserializar_arvore(const string& filename)
     {
         ifstream file(filename, ios::binary | ios::in);
         if (!file)
@@ -537,7 +534,7 @@ public:
         BPlusTree tree(degree);
 
         // Desserializar a árvore recursivamente, começando pelo nó raiz
-        tree.raiz = deserializeNode(file, nullptr, degree);
+        tree.raiz = desserializar_no(file, nullptr, degree);
 
         if (!tree.raiz)
         {
@@ -567,7 +564,7 @@ public:
         return c;
     }
 
-    void serializeBPlusTree(const BPlusTree& tree, const string& filename) {
+    void serializar_arvore(const BPlusTree& tree, const string& filename) {
         ofstream file(filename, ios::binary | ios::out);
         if (!file) {
             cerr << "Error opening file for serialization: " << filename << endl;
@@ -579,13 +576,13 @@ public:
         file.write(reinterpret_cast<char*>(&degree), sizeof(degree));
 
         // Serializar a árvore recursivamente, começando pelo nó raiz
-        serializeNode(file, tree.raiz);
+        serializar_no(file, tree.raiz);
         deletar(tree.raiz);
         file.close();
     }
 
     // Função recursiva para serializar um nó e seus filhos
-    void serializeNode(ofstream& file, const No<RegistroBPT>* node) {
+    void serializar_no(ofstream& file, const No<RegistroBPT>* node) {
         // Escrever as informações do nó no arquivo (is_leaf e size)
         bool is_leaf = node->folha;
         size_t size = node->ocupacao;
@@ -598,7 +595,7 @@ public:
         if (!is_leaf) {
             // Serializar os nós filhos recursivamente
             for (size_t i = 0; i <= size; ++i) {
-                serializeNode(file, node->filhos[i]);
+                serializar_no(file, node->filhos[i]);
             }
         }
     }
@@ -606,7 +603,7 @@ public:
 
     Registro* buscar_registro_bpt(ifstream& dataFile, int id_busca) 
     {
-        No<RegistroBPT>* node = this->busca_BPlusTree(this->raiz, id_busca);
+        No<RegistroBPT>* node = this->busca_arvore(this->raiz, id_busca);
         Registro* registro = nullptr;
 
         if (node != nullptr) {

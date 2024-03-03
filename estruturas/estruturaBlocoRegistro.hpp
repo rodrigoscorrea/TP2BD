@@ -65,7 +65,7 @@ void imprimir_registro(Registro* registro)
         std::cout << "Registro NULL"<< "\n";
         return;
     }
-    std::cout << "\nId: " << registro->id << "\n";
+    std::cout << "Id: " << registro->id << "\n";
     std::cout << "Titulo: " << registro->title << "| Ano: " << registro->year <<"\n";
     std::cout << "Autores: " << registro->authors << "\n";
     std::cout << "Citacoes: " << registro->citations << "\n";

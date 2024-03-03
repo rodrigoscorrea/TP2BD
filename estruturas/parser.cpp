@@ -1,12 +1,30 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "./estruturaBlocoRegistro.hpp"
+#include "../estruturas/estruturaBlocoRegistro.hpp"
 #include "../hash/hashTable.cpp"
+#include "../bptree/bptreeSerializada.cpp"
+#include "../bptree/bptreeStringSerializada.cpp"
 
-using namespace std;
+#ifndef PARSER_HPP
+#define PARSER_HPP
 
-void getUntilLastQuote(std::istream& stream, std::string& result)
+string remover_aspas_input(const std::string& input) {
+    string result = "";
+    
+    for (size_t i = 0; i < input.length(); ++i) {
+        char ch = input[i];
+
+        if (ch == '"' && i + 1 < input.length() && input[i + 1] == ';') {
+            break;
+        }
+        result += ch;
+    }
+
+    return result;
+}
+
+void remover_aspas(std::istream& stream, std::string& result)
 {
     result.clear();
     char ch;
@@ -56,90 +74,4 @@ std::string normalizar_string(std::string str)
     return result.substr(start, end - start + 1);
 }
 
-
-void ler_arquivo_csv(const string& nome_arquivo, hashTable& hash)
-{
-    ifstream arquivo(nome_arquivo, ios::in);
-    if (!arquivo.is_open())
-    {
-        cerr << "Nao foi possivel abrir o arquivo: " << nome_arquivo << "\n";
-        return;
-    }
-
-    string linha;
-    while (getline(arquivo, linha))
-    {
-        stringstream linha_analisada(linha);
-        string dado;
-
-        int id, year, citations;
-        string title, authors, update, snippet;
-
-        try
-        {
-            getline(linha_analisada, dado, '"');
-            getUntilLastQuote(linha_analisada, dado);
-            id = stoi(dado);
-
-            getline(linha_analisada, dado, '"');
-            getUntilLastQuote(linha_analisada, dado);
-            title = dado;
-
-            getline(linha_analisada, dado, '"');
-            getUntilLastQuote(linha_analisada, dado);
-            year = stoi(dado);
-
-            getline(linha_analisada, dado, '"');
-            getUntilLastQuote(linha_analisada, dado);
-            authors = dado;
-
-            getline(linha_analisada, dado, '"');
-            getUntilLastQuote(linha_analisada, dado);
-            citations = stoi(dado);
-
-            getline(linha_analisada, dado, '"');
-            getUntilLastQuote(linha_analisada, dado);
-            update = dado;
-
-            getline(linha_analisada, dado, '"');
-            getUntilLastQuote(linha_analisada, dado);
-            snippet = dado;
-
-            title = normalizar_string(title);
-            authors = normalizar_string(authors);
-            update = normalizar_string(update);
-            snippet = normalizar_string(snippet);
-
-            Registro* novo_registro = criar_registro(id, title, year, authors, citations, update, snippet);
-            hash.inserirRegistroBucket(novo_registro);
-        } catch (const std::exception& e)
-        {
-            std::cerr << "Caught an exception: " << e.what() << " " << id << std::endl;
-        }
-    }
-    arquivo.close();
-
-    return;
-}
-
-int main(int argc, char const *argv[])
-{
-    // UPLOAD
-    const string nome_arquivo = argv[2];
-    hashTable Hash = hashTable("arquivoDados.bin");
-
-    cout << "Iniciando leitura csv" << endl;
-
-    ler_arquivo_csv(nome_arquivo, Hash);
-
-    cout << "Fim de leitura csv" << endl;
-
-    cout << "Iniciando leitura arquivo binario" << endl;
-
-    cout << "Fim de leitura arquivo binario" << endl;
-    // FIM UPLOAD
-
-    imprimir_registro(Hash.busca_registro_hashtable(std::atoi(argv[1])));
-
-    return 0;
-}
+#endif
