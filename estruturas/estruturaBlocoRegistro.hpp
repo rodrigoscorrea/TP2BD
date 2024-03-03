@@ -2,7 +2,7 @@
 #define BLOCOREGISTRO_HPP
 
 #define TAM_BLOCO 4096
-#define X 16
+#define BLOCO_REGISTROS 16
 
 #include <iostream>
 #include <fstream>
@@ -27,7 +27,7 @@ struct Cabecalho_Bloco
 {
     int quantidade_registros;
     int tamanho_disponivel;
-    int posicoes_registros[X];
+    int posicoes_registros[BLOCO_REGISTROS];
     
 };
 
@@ -102,7 +102,7 @@ Cabecalho_Bloco* criar_cabecalho_bloco()
 {
     Cabecalho_Bloco* novo_cabecalho = new Cabecalho_Bloco();
     novo_cabecalho->quantidade_registros = 0;
-    for (int i = 0; i < X; i++)
+    for (int i = 0; i < BLOCO_REGISTROS; i++)
     {
         novo_cabecalho->posicoes_registros[i] = 0;
     }

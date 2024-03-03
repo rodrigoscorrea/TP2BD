@@ -576,7 +576,7 @@ public:
 
         // Serializar a árvore recursivamente, começando pelo nó raiz
         serializar_no(file, tree.raiz);
-        deletar(tree.raiz);
+        //deletar(tree.raiz);
         file.close();
     }
 

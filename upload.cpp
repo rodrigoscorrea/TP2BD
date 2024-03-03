@@ -64,10 +64,11 @@ void ler_arquivo_csv(const string& nome_arquivo, hashTable& hash, BPlusTree& arv
             Registro* novo_registro = criar_registro(id, title, year, authors, citations, update, snippet);
             size_t posicao = hash.inserirRegistroBucket(novo_registro);
 
-            cout << posicao << endl;
+            RegistroBPT* reg1 = new RegistroBPT(id, posicao);
+            RegistroString* reg2 = new RegistroString(title, posicao);
 
-            arvore1.inserir_arvore(new RegistroBPT(id, posicao));
-            arvore2.inserir_arvore_s(new RegistroString(title, posicao));
+            arvore1.inserir_arvore(reg1);
+            arvore2.inserir_arvore_s(reg2);
             
             delete novo_registro;
         } 
@@ -83,11 +84,11 @@ void ler_arquivo_csv(const string& nome_arquivo, hashTable& hash, BPlusTree& arv
 
 int main(int argc, char const *argv[])
 {   
-    const string nome_arquivo = argv[1];
+    const string nome_arquivo = "artigo.csv";//argv[1];
 
     hashTable hash_table = hashTable(ARQUIVO_HASHTABLE);
-    BPlusTree arvore_primaria(ALTURA_ARVORE);
-    BPlusTreeString arvore_secundaria(ALTURA_ARVORE);
+    BPlusTree arvore_primaria(ALTURA_ARVORE_PRIMARIA);
+    BPlusTreeString arvore_secundaria(ALTURA_ARVORE_SECUNDARIA);
 
     ler_arquivo_csv(nome_arquivo, hash_table, arvore_primaria, arvore_secundaria);
 
