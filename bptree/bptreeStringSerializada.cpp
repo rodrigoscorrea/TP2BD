@@ -654,7 +654,6 @@ public:
             this->deletar_s(this->get_raiz());
         }
 
-        delete node;
         return registro;
     }
 };

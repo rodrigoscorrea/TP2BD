@@ -643,7 +643,6 @@ public:
             this->deletar(this->get_raiz());
         }
 
-        delete node;
         return registro;
     }
 };
