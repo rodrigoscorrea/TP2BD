@@ -8,7 +8,7 @@
 int main(int argc, char const *argv[])
 {   
     const int id = stoi(argv[1]);
-    hashTable hash_table = hashTable(ARQUIVO_HASHTABLE, false);
+    HashTable hash_table = HashTable(ARQUIVO_HASHTABLE, false);
 
     imprimir_registro(hash_table.busca_registro_hashtable(id));
 

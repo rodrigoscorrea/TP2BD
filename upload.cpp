@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void ler_arquivo_csv(const string& nome_arquivo, hashTable& hash, BPlusTree& arvore1, BPlusTreeString& arvore2)
+void ler_arquivo_csv(const string& nome_arquivo, HashTable& hash, BPlusTree& arvore1, BPlusTreeString& arvore2)
 {
     ifstream arquivo(nome_arquivo, ios::in);
     if (!arquivo.is_open())
@@ -62,7 +62,7 @@ void ler_arquivo_csv(const string& nome_arquivo, hashTable& hash, BPlusTree& arv
             snippet = normalizar_string(snippet);
 
             Registro* novo_registro = criar_registro(id, title, year, authors, citations, update, snippet);
-            size_t posicao = hash.inserirRegistroBucket(novo_registro);
+            size_t posicao = hash.inserir_registro_bucket(novo_registro);
 
             RegistroBPT* reg1 = new RegistroBPT(id, posicao);
             RegistroString* reg2 = new RegistroString(title, posicao);
@@ -86,7 +86,7 @@ int main(int argc, char const *argv[])
 {   
     const string nome_arquivo = "artigo.csv";//argv[1];
 
-    hashTable hash_table = hashTable(ARQUIVO_HASHTABLE);
+    HashTable hash_table = HashTable(ARQUIVO_HASHTABLE);
     BPlusTree arvore_primaria(ALTURA_ARVORE_PRIMARIA);
     BPlusTreeString arvore_secundaria(ALTURA_ARVORE_SECUNDARIA);
 
@@ -95,6 +95,6 @@ int main(int argc, char const *argv[])
     arvore_primaria.serializar_arvore(arvore_primaria, ARQUIVO_ARVORE_PRIMARIA);
     arvore_secundaria.serializar_arvore_s(arvore_secundaria, ARQUIVO_ARVORE_SECUNDARIA);
     
-    hash_table.mediaRegistros();
+    hash_table.media_registros();
     return 0;
 }

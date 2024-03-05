@@ -11,7 +11,7 @@ struct Bucket{
     int qtd_blocos;
 };
 
-void deletarBucket(Bucket* bucket){
+void deletar_bucket(Bucket* bucket){
     for (int i = 0; i < bucket->qtd_blocos; i++)
     {
         deletar_bloco(bucket->blocos[i]);
@@ -19,7 +19,7 @@ void deletarBucket(Bucket* bucket){
     delete bucket;
 }
 
-void inicializarBucket(ofstream& arquivoBin)
+void inicializar_bucket(ofstream& arquivoBin)
 {
     Bucket* bucket = new Bucket();
     bucket->qtd_blocos = 0;
@@ -30,69 +30,68 @@ void inicializarBucket(ofstream& arquivoBin)
         arquivoBin.write(reinterpret_cast<char*>(bucket->blocos[i]->cabecalho), sizeof(Cabecalho_Bloco));
         arquivoBin.write(reinterpret_cast<char*>(bucket->blocos[i]->dados), TAM_BLOCO - sizeof(Cabecalho_Bloco));
     }
-    deletarBucket(bucket);
+    deletar_bucket(bucket);
 }
 
-class hashTable
+class HashTable
 {
     private:
         ofstream arquivoBin;
     public:
-        hashTable(string nomeArquivo, bool sobrescrever);
-        size_t funcaoHash(size_t id);
-        void inserirRegistroBloco(Bloco* bloco, Registro* reg);
-        size_t inserirRegistroBucket(Registro* reg);
+        HashTable(string nomeArquivo, bool sobrescrever);
+        size_t funcao_hash(size_t id);
+        size_t inserir_registro_bucket(Registro* reg);
         Registro* busca_registro_hashtable(int id);
-        void mediaRegistros();
+        void media_registros();
         ifstream arquivoIn;
         int qtd_registros = 0; 
         float resultado = 0.0;
         float soma_ocupacao = 0.0;
 };
 
-void hashTable::mediaRegistros(){
-    cout<< "A media em bytes de um registro eh de: " << this->soma_ocupacao / this->qtd_registros; 
+void HashTable::media_registros(){
+    cout<< "A media em bytes de um registro eh de: " << this->soma_ocupacao / this->qtd_registros << endl; 
 }
 
-hashTable::hashTable(string nomeArquivo, bool sobrescrever = true)
+HashTable::HashTable(string nomeArquivo, bool sobrescrever = true)
 {   
     if (sobrescrever) 
     {
         ofstream _arquivoBin(nomeArquivo, ios::binary | ios::out);
         if (!_arquivoBin) cout << "Erro ao criar arquivo de dados" << endl;
         
-        this->arquivoBin = move(_arquivoBin);
+        this->arquivoBin = std::move(_arquivoBin);
 
         for (int i = 0; i < BUCKETS; i++)
         {
-            inicializarBucket(this->arquivoBin);
+            inicializar_bucket(this->arquivoBin);
         }
 
         ifstream _arquivoIn(nomeArquivo, ios::in);
         if (!_arquivoIn) cout << "Erro ao abrir arquivo de entrada" << endl;
 
-        this->arquivoIn = move(_arquivoIn);
+        this->arquivoIn = std::move(_arquivoIn);
     }
     else
     {
         ifstream _arquivoIn(nomeArquivo, ios::in);
         if (!_arquivoIn) cout << "Erro ao abrir arquivo de entrada" << endl;
 
-        this->arquivoIn = move(_arquivoIn);
+        this->arquivoIn = std::move(_arquivoIn);
     }
 
 }
 
-size_t hashTable::funcaoHash(size_t id) { 
+size_t HashTable::funcao_hash(size_t id) { 
     size_t primoAleatorio = 37;
     return (id * primoAleatorio) % BUCKETS;
 }
 
-size_t hashTable::inserirRegistroBucket(Registro* registro) 
+size_t HashTable::inserir_registro_bucket(Registro* registro) 
 {
     bool regInserido = false;
 
-    size_t chave = funcaoHash(registro->id);
+    size_t chave = funcao_hash(registro->id);
     size_t posicao = chave * TAM_BLOCO * BLOCOS;
 
     this->arquivoIn.seekg(posicao);
@@ -137,9 +136,9 @@ size_t hashTable::inserirRegistroBucket(Registro* registro)
     return -1;
 }
 
-Registro* hashTable::busca_registro_hashtable(int id) 
+Registro* HashTable::busca_registro_hashtable(int id) 
 {
-    size_t chave = funcaoHash(id);
+    size_t chave = funcao_hash(id);
     size_t posicao = chave * TAM_BLOCO * BLOCOS;
     this->arquivoIn.seekg(posicao);
 

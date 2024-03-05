@@ -9,7 +9,7 @@
 int main(int argc, char const *argv[])
 {   
     const int id = stoi(argv[1]);
-    hashTable hash_table = hashTable(ARQUIVO_HASHTABLE, false);
+    HashTable hash_table = HashTable(ARQUIVO_HASHTABLE, false);
     BPlusTree arvore_primaria(ALTURA_ARVORE_PRIMARIA); 
     arvore_primaria = arvore_primaria.desserializar_arvore(ARQUIVO_ARVORE_PRIMARIA);
 
