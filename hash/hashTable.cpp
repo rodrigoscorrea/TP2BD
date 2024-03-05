@@ -3,9 +3,8 @@
 #include <memory>
 #include "string"
 #include "../estruturas/estruturaBlocoRegistro.hpp"
+#include "../estruturas/definicoes.hpp"
 using namespace std;
-#define BUCKETS 15000
-#define BLOCOS 12
 
 struct Bucket{
     Bloco* blocos[BLOCOS];
@@ -44,8 +43,16 @@ class hashTable
         void inserirRegistroBloco(Bloco* bloco, Registro* reg);
         size_t inserirRegistroBucket(Registro* reg);
         Registro* busca_registro_hashtable(int id);
+        void mediaRegistros();
         ifstream arquivoIn;
+        int qtd_registros = 0; 
+        float resultado = 0.0;
+        float soma_ocupacao = 0.0;
 };
+
+void hashTable::mediaRegistros(){
+    cout<< "A media em bytes de um registro eh de: " << this->soma_ocupacao / this->qtd_registros; 
+}
 
 hashTable::hashTable(string nomeArquivo, bool sobrescrever = true)
 {   
@@ -106,9 +113,9 @@ size_t hashTable::inserirRegistroBucket(Registro* registro)
 
             // Inserir registro no bloco
             bloco = inserir_registro_bloco(bloco, registro);
-
+            this->qtd_registros++;
+            soma_ocupacao+= registro->ocupacao;
             regInserido = true;
-
             // Preparar buffer para escrever no arquivo
             char buffer[TAM_BLOCO];
             memcpy(buffer, bloco->cabecalho, sizeof(Cabecalho_Bloco));

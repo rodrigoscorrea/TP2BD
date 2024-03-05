@@ -94,6 +94,7 @@ int main(int argc, char const *argv[])
 
     arvore_primaria.serializar_arvore(arvore_primaria, ARQUIVO_ARVORE_PRIMARIA);
     arvore_secundaria.serializar_arvore_s(arvore_secundaria, ARQUIVO_ARVORE_SECUNDARIA);
-
+    
+    hash_table.mediaRegistros();
     return 0;
 }

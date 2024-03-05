@@ -1,13 +1,10 @@
 #ifndef BLOCOREGISTRO_HPP
 #define BLOCOREGISTRO_HPP
 
-#define TAM_BLOCO 4096
-#define BLOCO_REGISTROS 16
-
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <vector> //tentar trabalhar sem e se conseguir apagar 
+#include "definicoes.hpp"
 
 using namespace std;
 

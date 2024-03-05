@@ -1,3 +1,7 @@
+#define TAM_BLOCO 4096
+#define BLOCO_REGISTROS 7
+#define BUCKETS 15000
+#define BLOCOS 15
 #define ALTURA_ARVORE_PRIMARIA 5
 #define ALTURA_ARVORE_SECUNDARIA 5
 #define ARQUIVO_HASHTABLE "hashtable_dados.bin"
