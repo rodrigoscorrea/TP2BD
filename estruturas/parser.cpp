@@ -9,24 +9,24 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
-string remover_aspas_input(const std::string& input) {
-    string result = "";
+string remover_aspas_input(const std::string& entrada) {
+    string resultado = "";
     
-    for (size_t i = 0; i < input.length(); ++i) {
-        char ch = input[i];
+    for (size_t i = 0; i < entrada.length(); ++i) {
+        char ch = entrada[i];
 
-        if (ch == '"' && i + 1 < input.length() && input[i + 1] == ';') {
+        if (ch == '"' && i + 1 < entrada.length() && entrada[i + 1] == ';') {
             break;
         }
-        result += ch;
+        resultado += ch;
     }
 
-    return result;
+    return resultado;
 }
 
-void remover_aspas(std::istream& stream, std::string& result)
+void remover_aspas(std::istream& stream, std::string& resultado)
 {
-    result.clear();
+    resultado.clear();
     char ch;
 
     while (stream.get(ch))
@@ -36,7 +36,7 @@ void remover_aspas(std::istream& stream, std::string& result)
             stream.get();
             break;
         }
-        result += ch;
+        resultado += ch;
     }
 }
 

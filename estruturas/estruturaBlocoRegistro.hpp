@@ -125,7 +125,6 @@ void deletar_bloco(Bloco* bloco)
     delete bloco;
 }
 
-
 Bloco* inserir_registro_bloco(Bloco* bloco, Registro* registro)
 {
     size_t cursor = bloco->cabecalho->posicoes_registros[bloco->cabecalho->quantidade_registros];

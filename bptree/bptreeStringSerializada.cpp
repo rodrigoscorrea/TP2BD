@@ -12,7 +12,7 @@
 
 // Registro que será usado na árvore
 struct RegistroString
-{ // VERIFICAR DEPOIS SE DÁ PRA FAZER SETANDO AO INVÉS DOS DOIS PARA DIFERENCIAR MAIS AINDA
+{ 
     string chave;
     size_t valor;
     RegistroString(string chave, size_t valor) : chave(chave), valor(valor) {}
@@ -20,6 +20,7 @@ struct RegistroString
 };
 
 template <typename T>
+//Nó da árvore - S simboliza String
 struct NoS
 {
     bool folha;
@@ -66,17 +67,17 @@ public:
         this->grau = _grau;
     }
 
-    NoS<RegistroString>* get_raiz(){ return this->raiz; }
+    NoS<RegistroString>* get_raiz(){ return this->raiz; } //retorna a raiz da árvore
 
-    NoS<RegistroString>* busca_arvore_s(NoS<RegistroString>* node, string chave_busca)
-    { // Raiz deve ser passada como parâmetro para node
-        if (node == nullptr)
+    NoS<RegistroString>* busca_arvore_s(NoS<RegistroString>* no, string chave_busca)
+    { // Raiz deve ser passada como parâmetro para no a fim de permitir recursão
+        if (no == nullptr)
         { // Caso raiz nula
             return nullptr;
         }
         else
         {
-            NoS<RegistroString>* cursor = node; 
+            NoS<RegistroString>* cursor = no; 
 
             while (cursor->folha == false)
             { 
@@ -95,7 +96,7 @@ public:
                 }
             }
 
-            // Busca se a chave existe NoS nó folha
+            // Busca se a chave existe nos nós folhas
             for (int i = 0; i<cursor->ocupacao; i++)
             {
                 if (cursor->registros[i].chave.compare(chave_busca) == 0)
@@ -108,15 +109,15 @@ public:
         }
     }
 
-    NoS<RegistroString>* busca_arvore_alcance_s(NoS<RegistroString>* node, RegistroString chave_busca)
-    { // Também usa raiz como parâmetro para node
-        if (node == nullptr)
+    NoS<RegistroString>* busca_arvore_alcance_s(NoS<RegistroString>* no, RegistroString chave_busca)
+    { // Também usa raiz como parâmetro para no
+        if (no == nullptr)
         { // Caso raiz nula
             return nullptr;
         }
         else
         {
-            NoS<RegistroString>* cursor = node; 
+            NoS<RegistroString>* cursor = no; 
 
             while (cursor->folha == false)
             { 
@@ -290,7 +291,7 @@ public:
 
             // Balanceamento - ancestral
             if (cursor->ancestral == nullptr)
-            { // Caso seja raiz, não há n
+            { // Caso seja raiz, não há
                 auto* novo_ancestral = new NoS<RegistroString>(this->grau);
                 cursor->ancestral = novo_ancestral;
                 novo_no->ancestral = novo_ancestral;
@@ -400,7 +401,7 @@ public:
         }
     }
 
-    void deletar_s(NoS<RegistroString>* cursor)
+    void deletar_s(NoS<RegistroString>* cursor) //deleta a árvore
     {
         if (cursor != nullptr)
         {
@@ -436,119 +437,119 @@ public:
         }
 
         std::string novo_prefixo = prefixo + (nivel > 0 ? "|  " : "");
-        std::string child_prefixo = novo_prefixo + "|--";
+        std::string filho_prefixo = novo_prefixo + "|--";
 
         for (int i = 0; i < cursor->ocupacao; ++i) {
             imprime_registro_s(cursor->registros[i], novo_prefixo);
             if (!cursor->folha) {
-                imprimir_no_s(cursor->filhos[i], nivel + 1, child_prefixo);
+                imprimir_no_s(cursor->filhos[i], nivel + 1, filho_prefixo);
             }
         }
 
         if (!cursor->folha) {
-            imprimir_no_s(cursor->filhos[cursor->ocupacao], nivel + 1, child_prefixo);
+            imprimir_no_s(cursor->filhos[cursor->ocupacao], nivel + 1, filho_prefixo);
         }
     }
 
-    NoS<RegistroString>* desserializar_no_s(ifstream& file, NoS<RegistroString>* parent, size_t degree)
+    NoS<RegistroString>* desserializar_no_s(ifstream& arquivo, NoS<RegistroString>* ancestral, size_t grau)
     {
-        bool is_leaf;
-        size_t size;
+        bool folha;
+        size_t tamanho;
 
         // Ler informações do nó
-        if (!file.read(reinterpret_cast<char*>(&is_leaf), sizeof(is_leaf)) || !file.read(reinterpret_cast<char*>(&size), sizeof(size)))
+        if (!arquivo.read(reinterpret_cast<char*>(&folha), sizeof(folha)) || !arquivo.read(reinterpret_cast<char*>(&tamanho), sizeof(tamanho)))
         {
             cerr << "Erro ao ler informações do nó do arquivo." << endl;
             return nullptr;
         }
 
         // Criar novo nó
-        auto* node = new NoS<RegistroString>(degree);
-        node->folha = is_leaf;
-        node->ocupacao = size;
-        node->ancestral = parent;
+        auto* node = new NoS<RegistroString>(grau);
+        node->folha = folha;
+        node->ocupacao = tamanho;
+        node->ancestral = ancestral;
 
         // Alocar espaço para os registros
-        node->registros = new RegistroString[degree - 1];
+        node->registros = new RegistroString[grau - 1];
 
         // Ler registros do nó
-        for (size_t i = 0; i < size; ++i)
+        for (size_t i = 0; i < tamanho; ++i)
         {
             size_t chave_size;
-            file.read(reinterpret_cast<char*>(&chave_size), sizeof(chave_size));
+            arquivo.read(reinterpret_cast<char*>(&chave_size), sizeof(chave_size));
             string chave(chave_size, '\0');
-            file.read(&chave[0], chave_size);
+            arquivo.read(&chave[0], chave_size);
             size_t valor;
-            file.read(reinterpret_cast<char*>(&valor), sizeof(valor));
+            arquivo.read(reinterpret_cast<char*>(&valor), sizeof(valor));
             node->registros[i] = RegistroString(chave, valor);
         }
 
         // Desserializar nós filhos
-        if (!is_leaf)
+        if (!folha)
         {
-            node->filhos = new NoS<RegistroString>*[degree];
-            for (size_t i = 0; i <= size; ++i)
+            node->filhos = new NoS<RegistroString>*[grau];
+            for (size_t i = 0; i <= tamanho; ++i)
             {
-                node->filhos[i] = desserializar_no_s(file, node, degree);
+                node->filhos[i] = desserializar_no_s(arquivo, node, grau);
             }
         }
 
         return node;
     }
 
-    void destruir_no_s(NoS<RegistroString>* node)
+    void destruir_no_s(NoS<RegistroString>* no) 
     {
-        if (node)
+        if (no)
         {
-            if (!node->folha)
+            if (!no->folha)
             {
-                for (size_t i = 0; i <= node->ocupacao; ++i)
+                for (size_t i = 0; i <= no->ocupacao; ++i)
                 {
-                    destruir_no_s(node->filhos[i]);
+                    destruir_no_s(no->filhos[i]);
                 }
 
-                delete[] node->filhos;
+                delete[] no->filhos;
             }
 
-            delete[] node->registros;
-            delete node;
+            delete[] no->registros;
+            delete no;
         }
     }
 
-    BPlusTreeString desserializar_arvore_s(const string& filename)
+    BPlusTreeString desserializar_arvore_s(const string& nome_arquivo)
     {
-        ifstream file(filename, ios::binary | ios::in);
-        if (!file)
+        ifstream arquivo(nome_arquivo, ios::binary | ios::in);
+        if (!arquivo)
         {
-            cerr << "Error opening file for deserialization: " << filename << endl;
+            cerr << "Erro ao abrir aquivo para desserializacao: " << nome_arquivo << endl;
             return BPlusTreeString(0);  // Retornar uma árvore B+ vazia
         }
 
         // Ler o grau da árvore do arquivo
-        size_t degree;
-        if (!file.read(reinterpret_cast<char*>(&degree), sizeof(degree)))
+        size_t grau;
+        if (!arquivo.read(reinterpret_cast<char*>(&grau), sizeof(grau)))
         {
-            cerr << "Error reading degree from file: " << filename << endl;
-            file.close();
+            cerr << "Erro ao ler o grau do arquivo: " << nome_arquivo << endl;
+            arquivo.close();
             return BPlusTreeString(0);  // Retornar uma árvore B+ vazia
         }
 
         // Criar uma nova árvore B+ com o grau fornecido
-        BPlusTreeString tree(degree);
+        BPlusTreeString arvore(grau);
 
         // Desserializar a árvore recursivamente, começando pelo nó raiz
-        tree.raiz = desserializar_no_s(file, nullptr, degree);
+        arvore.raiz = desserializar_no_s(arquivo, nullptr, grau);
 
-        if (!tree.raiz)
+        if (!arvore.raiz)
         {
-            cerr << "Error deserializing root node from file: " << filename << endl;
-            file.close();
+            cerr << "Erro ao desserializar a raiz do arquivo: " << nome_arquivo << endl;
+            arquivo.close();
             return BPlusTreeString(0);  // Retornar uma árvore B+ vazia
         }
 
-        file.close();
+        arquivo.close();
 
-        return tree;
+        return arvore;
     }
 
     int contar_nos_s(NoS<RegistroString>* NoS) {
@@ -567,51 +568,51 @@ public:
         return c;
     }
 
-    void serializar_arvore_s(const BPlusTreeString& tree, const string& filename) {
-        ofstream file(filename, ios::binary | ios::out);
-        if (!file) {
-            cerr << "Error opening file for serialization: " << filename << endl;
+    void serializar_arvore_s(const BPlusTreeString& arvore, const string& nome_arquivo) {
+        ofstream arquivo(nome_arquivo, ios::binary | ios::out);
+        if (!arquivo) {
+            cerr << "Erro ao abrir o arquivo para serialização " << nome_arquivo << endl;
             return;
         }
 
         // Escrever o grau da árvore NoS arquivo
-        size_t degree = tree.grau;
-        file.write(reinterpret_cast<char*>(&degree), sizeof(degree));
+        size_t grau = arvore.grau;
+        arquivo.write(reinterpret_cast<char*>(&grau), sizeof(grau));
 
         // Serializar a árvore recursivamente, começando pelo nó raiz
-        serializar_no_s(file, tree.raiz);
+        serializar_no_s(arquivo, arvore.raiz);
         //deletar_s(tree.raiz);
-        file.close();
+        arquivo.close();
     }
 
-    void serializar_no_s(ofstream& file, const NoS<RegistroString>* node) {
-        if (node == nullptr) {
+    void serializar_no_s(ofstream& arquivo, const NoS<RegistroString>* no) {
+        if (no == nullptr) {
             return;
         }
 
         // Escrever as informações do nó no arquivo
-        bool is_leaf = node->folha;
-        size_t size = node->ocupacao;
-        file.write(reinterpret_cast<const char*>(&is_leaf), sizeof(is_leaf));
-        file.write(reinterpret_cast<const char*>(&size), sizeof(size));
+        bool folha = no->folha;
+        size_t tamanho = no->ocupacao;
+        arquivo.write(reinterpret_cast<const char*>(&folha), sizeof(folha));
+        arquivo.write(reinterpret_cast<const char*>(&tamanho), sizeof(tamanho));
 
         // Escrever os registros do nó no arquivo
-        for (size_t i = 0; i < size; ++i) {
-            size_t chave_size = node->registros[i].chave.size();
-            file.write(reinterpret_cast<const char*>(&chave_size), sizeof(chave_size));
-            file.write(node->registros[i].chave.c_str(), chave_size);
-            file.write(reinterpret_cast<const char*>(&node->registros[i].valor), sizeof(node->registros[i].valor));
+        for (size_t i = 0; i < tamanho; ++i) {
+            size_t tam_chave = no->registros[i].chave.size();
+            arquivo.write(reinterpret_cast<const char*>(&tam_chave), sizeof(tam_chave));
+            arquivo.write(no->registros[i].chave.c_str(), tam_chave);
+            arquivo.write(reinterpret_cast<const char*>(&no->registros[i].valor), sizeof(no->registros[i].valor));
         }
 
         // Serializar nós filhos, se não for folha
-        if (!is_leaf) {
-            for (size_t i = 0; i <= size; ++i) {
-                serializar_no_s(file, node->filhos[i]);
+        if (!folha) {
+            for (size_t i = 0; i <= tamanho; ++i) {
+                serializar_no_s(arquivo, no->filhos[i]);
             }
         }
     }
 
-    Registro* buscar_registro_s(ifstream& dataFile, string id_busca) 
+    Registro* buscar_registro_s(ifstream& arquivo_index, string id_busca) 
     {
         NoS<RegistroString>* node = this->busca_arvore_s(this->raiz, id_busca);
         Registro* registro = nullptr;
@@ -633,15 +634,15 @@ public:
             }
 
             registro = new Registro();
-            dataFile.seekg(reg->valor);
-            dataFile.read(reinterpret_cast<char*>(&registro->id), sizeof(int));
+            arquivo_index.seekg(reg->valor);
+            arquivo_index.read(reinterpret_cast<char*>(&registro->id), sizeof(int));
 
-            getline(dataFile, registro->title, '\0');
-            dataFile.read(reinterpret_cast<char*>(&registro->year), sizeof(int));
-            getline(dataFile, registro->authors, '\0');
-            dataFile.read(reinterpret_cast<char*>(&registro->citations), sizeof(int));
-            getline(dataFile, registro->update, '\0');
-            getline(dataFile, registro->snippet, '\0');
+            getline(arquivo_index, registro->title, '\0');
+            arquivo_index.read(reinterpret_cast<char*>(&registro->year), sizeof(int));
+            getline(arquivo_index, registro->authors, '\0');
+            arquivo_index.read(reinterpret_cast<char*>(&registro->citations), sizeof(int));
+            getline(arquivo_index, registro->update, '\0');
+            getline(arquivo_index, registro->snippet, '\0');
 
             registro->ocupacao = sizeof(int) + registro->title.size() + 1 +
                                 sizeof(int) + registro->authors.size() + 1 +
@@ -649,7 +650,7 @@ public:
                                 registro->snippet.size() + 1;
 
             int quantidade_nos = contar_nos_s(this->get_raiz());
-            cout << "Quantidade total de blocos do arquivo de índice primário: " << quantidade_nos << endl;
+            cout << "Quantidade total de blocos do arquivo de índice secundário: " << quantidade_nos << endl;
 
             this->deletar_s(this->get_raiz());
         }

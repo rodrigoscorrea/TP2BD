@@ -86,13 +86,19 @@ int main(int argc, char const *argv[])
 {   
     const string nome_arquivo = "artigo.csv";//argv[1];
 
+    cout << "Inicializando arquivo Hash." << endl;
     HashTable hash_table = HashTable(ARQUIVO_HASHTABLE);
+    cout << "Inicializando árvores." << endl;
     BPlusTree arvore_primaria(ALTURA_ARVORE_PRIMARIA);
     BPlusTreeString arvore_secundaria(ALTURA_ARVORE_SECUNDARIA);
 
+    cout << "Lendo arquivo CSV." << endl;
+    cout << "Adicionando registros no arquivo Hash." << endl;
     ler_arquivo_csv(nome_arquivo, hash_table, arvore_primaria, arvore_secundaria);
 
+    cout << "Criando arquivo de índice primário" << endl;
     arvore_primaria.serializar_arvore(arvore_primaria, ARQUIVO_ARVORE_PRIMARIA);
+    cout << "Criando arquivo de índice secundário" << endl;
     arvore_secundaria.serializar_arvore_s(arvore_secundaria, ARQUIVO_ARVORE_SECUNDARIA);
     
     hash_table.media_registros();

@@ -449,102 +449,102 @@ public:
         }
     }
 
-    No<RegistroBPT>* desserializar_no(ifstream& file, No<RegistroBPT>* parent, size_t degree)
+    No<RegistroBPT>* desserializar_no(ifstream& arquivo, No<RegistroBPT>* ancestral, size_t grau)
     {
         // Ler as informações do nó do arquivo
-        bool is_leaf;
-        size_t size;
-        if (!file.read(reinterpret_cast<char*>(&is_leaf), sizeof(is_leaf)) || !file.read(reinterpret_cast<char*>(&size), sizeof(size)))
+        bool folha;
+        size_t tamanho;
+        if (!arquivo.read(reinterpret_cast<char*>(&folha), sizeof(folha)) || !arquivo.read(reinterpret_cast<char*>(&tamanho), sizeof(tamanho)))
         {
-            cerr << "Error reading node information from file." << endl;
+            cerr << "Error reading node information from arquivo." << endl;
             return nullptr;
         }
 
         // Criar um novo nó
-        auto* node = new No<RegistroBPT>(degree);
-        node->folha = is_leaf;
-        node->ocupacao = size;
-        node->ancestral = parent;
+        auto* no = new No<RegistroBPT>(grau);
+        no->folha = folha;
+        no->ocupacao = tamanho;
+        no->ancestral = ancestral;
 
         // Ler os itens do nó do arquivo
-        node->registros = new RegistroBPT[degree - 1];
-        if (!file.read(reinterpret_cast<char*>(node->registros), sizeof(RegistroBPT) * (degree - 1)))
+        no->registros = new RegistroBPT[grau - 1];
+        if (!arquivo.read(reinterpret_cast<char*>(no->registros), sizeof(RegistroBPT) * (grau - 1)))
         {
-            cerr << "Error reading node items from file." << endl;
-            delete node;
+            cerr << "Erro ao ler no do arquivo." << endl;
+            delete no;
             return nullptr;
         }
 
-        if (!is_leaf)
+        if (!folha)
         {
             // Desserializar os nós filhos recursivamente
-            node->filhos = new No<RegistroBPT>*[degree];
-            for (size_t i = 0; i <= size; ++i) {
-                node->filhos[i] = desserializar_no(file, node, degree);
-                if (!node->filhos[i])
+            no->filhos = new No<RegistroBPT>*[grau];
+            for (size_t i = 0; i <= tamanho; ++i) {
+                no->filhos[i] = desserializar_no(arquivo, no, grau);
+                if (!no->filhos[i])
                 {
-                    cerr << "Error deserializing child node from file." << endl;
-                    destruir_no(node); // Liberar a memória alocada
+                    cerr << "Erro ao desserializar filhos do no do arquivo" << endl;
+                    destruir_no(no); // Liberar a memória alocada
                     return nullptr;
                 }
             }
         }
-        return node;
+        return no;
     }
 
-    void destruir_no(No<RegistroBPT>* node)
+    void destruir_no(No<RegistroBPT>* no)
     {
-        if (node)
+        if (no)
         {
-            if (!node->folha)
+            if (!no->folha)
             {
-                for (size_t i = 0; i <= node->ocupacao; ++i)
+                for (size_t i = 0; i <= no->ocupacao; ++i)
                 {
-                    destruir_no(node->filhos[i]);
+                    destruir_no(no->filhos[i]);
                 }
 
-                delete[] node->filhos;
+                delete[] no->filhos;
             }
 
-            delete[] node->registros;
-            delete node;
+            delete[] no->registros;
+            delete no;
         }
     }
 
-    BPlusTree desserializar_arvore(const string& filename)
+    BPlusTree desserializar_arvore(const string& nome_arquivo)
     {
-        ifstream file(filename, ios::binary | ios::in);
-        if (!file)
+        ifstream arquivo(nome_arquivo, ios::binary | ios::in);
+        if (!arquivo)
         {
-            cerr << "Error opening file for deserialization: " << filename << endl;
+            cerr << "Erro abrindo arquivo para desserilização: " << nome_arquivo << endl;
             return BPlusTree(0);  // Retornar uma árvore B+ vazia
         }
 
         // Ler o grau da árvore do arquivo
-        size_t degree;
-        if (!file.read(reinterpret_cast<char*>(&degree), sizeof(degree)))
+        size_t grau;
+        if (!arquivo.read(reinterpret_cast<char*>(&grau), sizeof(grau)))
         {
-            cerr << "Error reading degree from file: " << filename << endl;
-            file.close();
+            cerr << "Erro ao ler grau pelo arquivo: " << nome_arquivo << endl;
+            arquivo.close();
             return BPlusTree(0);  // Retornar uma árvore B+ vazia
         }
 
         // Criar uma nova árvore B+ com o grau fornecido
-        BPlusTree tree(degree);
+        BPlusTree arv(grau);
 
         // Desserializar a árvore recursivamente, começando pelo nó raiz
-        tree.raiz = desserializar_no(file, nullptr, degree);
+        arv.raiz = desserializar_no(arquivo, nullptr, grau);
 
-        if (!tree.raiz)
+        if (!arv.raiz)
         {
-            cerr << "Error deserializing root node from file: " << filename << endl;
-            file.close();
+            cerr << "Erro ao desserializar raiz do arquivo: " << nome_arquivo << endl;
+            arquivo.close();
             return BPlusTree(0);  // Retornar uma árvore B+ vazia
         }
 
-        file.close();
+        arquivo.close();
 
-        return tree;
+        return arv;
     }
 
     int contar_nos(No<RegistroBPT>* no) {
@@ -563,44 +563,26 @@ public:
         return c;
     }
 
-    void serializar_arvore(const BPlusTree& tree, const string& filename) {
-        ofstream file(filename, ios::binary | ios::out);
-        if (!file) {
-            cerr << "Error opening file for serialization: " << filename << endl;
-            return;
-        }
-
-        // Escrever o grau da árvore no arquivo
-        size_t degree = tree.grau;
-        file.write(reinterpret_cast<char*>(&degree), sizeof(degree));
-
-        // Serializar a árvore recursivamente, começando pelo nó raiz
-        serializar_no(file, tree.raiz);
-        //deletar(tree.raiz);
-        file.close();
-    }
-
     // Função recursiva para serializar um nó e seus filhos
-    void serializar_no(ofstream& file, const No<RegistroBPT>* node) {
+    void serializar_no(ofstream& arquivo, const No<RegistroBPT>* no) {
         // Escrever as informações do nó no arquivo (is_leaf e size)
-        bool is_leaf = node->folha;
-        size_t size = node->ocupacao;
-        file.write(reinterpret_cast<const char*>(&is_leaf), sizeof(is_leaf));
-        file.write(reinterpret_cast<const char*>(&size), sizeof(size));
+        bool folha = no->folha;
+        size_t ocupacao = no->ocupacao;
+        arquivo.write(reinterpret_cast<const char*>(&folha), sizeof(folha));
+        arquivo.write(reinterpret_cast<const char*>(&ocupacao), sizeof(ocupacao));
 
         // Escrever os itens do nó no arquivo (registros)
-        file.write(reinterpret_cast<const char*>(node->registros), sizeof(RegistroBPT) * (node->grau - 1));
+        arquivo.write(reinterpret_cast<const char*>(no->registros), sizeof(RegistroBPT) * (no->grau - 1));
 
-        if (!is_leaf) {
+        if (!folha) {
             // Serializar os nós filhos recursivamente
-            for (size_t i = 0; i <= size; ++i) {
-                serializar_no(file, node->filhos[i]);
+            for (size_t i = 0; i <= ocupacao; ++i) {
+                serializar_no(arquivo, no->filhos[i]);
             }
         }
     }
 
-
-    Registro* buscar_registro_bpt(ifstream& dataFile, int id_busca) 
+    Registro* buscar_registro_bpt(ifstream& arquivo_index, int id_busca) 
     {
         No<RegistroBPT>* node = this->busca_arvore(this->raiz, id_busca);
         Registro* registro = nullptr;
@@ -622,15 +604,15 @@ public:
             }
 
             registro = new Registro();
-            dataFile.seekg(reg->valor);
-            dataFile.read(reinterpret_cast<char*>(&registro->id), sizeof(int));
+            arquivo_index.seekg(reg->valor);
+            arquivo_index.read(reinterpret_cast<char*>(&registro->id), sizeof(int));
 
-            getline(dataFile, registro->title, '\0');
-            dataFile.read(reinterpret_cast<char*>(&registro->year), sizeof(int));
-            getline(dataFile, registro->authors, '\0');
-            dataFile.read(reinterpret_cast<char*>(&registro->citations), sizeof(int));
-            getline(dataFile, registro->update, '\0');
-            getline(dataFile, registro->snippet, '\0');
+            getline(arquivo_index, registro->title, '\0');
+            arquivo_index.read(reinterpret_cast<char*>(&registro->year), sizeof(int));
+            getline(arquivo_index, registro->authors, '\0');
+            arquivo_index.read(reinterpret_cast<char*>(&registro->citations), sizeof(int));
+            getline(arquivo_index, registro->update, '\0');
+            getline(arquivo_index, registro->snippet, '\0');
 
             registro->ocupacao = sizeof(int) + registro->title.size() + 1 +
                                 sizeof(int) + registro->authors.size() + 1 +
@@ -645,5 +627,23 @@ public:
 
         return registro;
     }
+
+    void serializar_arvore(const BPlusTree& arvore, const string& nome_arquivo) {
+        ofstream arquivo(nome_arquivo, ios::binary | ios::out);
+        if (!arquivo) {
+            cerr << "Error opening arquivo for serialization: " << nome_arquivo << endl;
+            return;
+        }
+
+        // Escrever o grau da árvore no arquivo
+        size_t grau = arvore.grau;
+        arquivo.write(reinterpret_cast<char*>(&grau), sizeof(grau));
+
+        // Serializar a árvore recursivamente, começando pelo nó raiz
+        serializar_no(arquivo, arvore.raiz);
+        //deletar(arvore.raiz);
+        arquivo.close();
+    }
+
 };
 #endif
