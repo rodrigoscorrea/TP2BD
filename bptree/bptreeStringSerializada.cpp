@@ -109,7 +109,7 @@ public:
         }
     }
 
-    NoS<RegistroString>* busca_arvore_alcance_s(NoS<RegistroString>* no, RegistroString chave_busca)
+    NoS<RegistroString>* posicionar_cursor_arvore_s(NoS<RegistroString>* no, RegistroString chave_busca)
     { // Também usa raiz como parâmetro para no
         if (no == nullptr)
         { // Caso raiz nula
@@ -326,7 +326,7 @@ public:
             NoS<RegistroString>* cursor = this->raiz;
 
             // Ir até as folhas
-            cursor = busca_arvore_alcance_s(cursor, registro_aux);
+            cursor = posicionar_cursor_arvore_s(cursor, registro_aux);
 
             if (cursor->ocupacao < (this->grau-1))
             { // Caso não haja overflow
@@ -426,13 +426,13 @@ public:
         imprimir_no_s(this->raiz, 0, "");
     }
 
-    void imprime_registro_s(const RegistroString& registro, const std::string& prefixo) {
+    void imprime_registro_arvore_s(const RegistroString& registro, const std::string& prefixo) {
         std::cout << prefixo << "Chave: " << registro.chave << " Valor: " << registro.valor << std::endl;
     }
 
     void imprimir_no_s(NoS<RegistroString>* cursor, int nivel, const std::string& prefixo) {
         if (cursor == NULL) {
-            std::cout << prefixo << "- <nó vazio>" << std::endl;
+            std::cout << prefixo << "- <no vazio>" << std::endl;
             return;
         }
 
@@ -440,7 +440,7 @@ public:
         std::string filho_prefixo = novo_prefixo + "|--";
 
         for (int i = 0; i < cursor->ocupacao; ++i) {
-            imprime_registro_s(cursor->registros[i], novo_prefixo);
+            imprime_registro_arvore_s(cursor->registros[i], novo_prefixo);
             if (!cursor->folha) {
                 imprimir_no_s(cursor->filhos[i], nivel + 1, filho_prefixo);
             }
@@ -459,7 +459,7 @@ public:
         // Ler informações do nó
         if (!arquivo.read(reinterpret_cast<char*>(&folha), sizeof(folha)) || !arquivo.read(reinterpret_cast<char*>(&tamanho), sizeof(tamanho)))
         {
-            cerr << "Erro ao ler informações do nó do arquivo." << endl;
+            cerr << "Erro ao ler informaçoes do no do arquivo." << endl;
             return nullptr;
         }
 
@@ -571,7 +571,7 @@ public:
     void serializar_arvore_s(const BPlusTreeString& arvore, const string& nome_arquivo) {
         ofstream arquivo(nome_arquivo, ios::binary | ios::out);
         if (!arquivo) {
-            cerr << "Erro ao abrir o arquivo para serialização " << nome_arquivo << endl;
+            cerr << "Erro ao abrir o arquivo para serializaçao " << nome_arquivo << endl;
             return;
         }
 
@@ -650,7 +650,7 @@ public:
                                 registro->snippet.size() + 1;
 
             int quantidade_nos = contar_nos_s(this->get_raiz());
-            cout << "Quantidade total de blocos do arquivo de índice secundário: " << quantidade_nos << endl;
+            cout << "Quantidade total de blocos do arquivo de indice secundario: " << quantidade_nos << endl;
 
             this->deletar_s(this->get_raiz());
         }

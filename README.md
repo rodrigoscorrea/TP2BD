@@ -9,9 +9,9 @@ Este repositório contém os materiais para o segundo trabalho prático da disci
 ## Execução dos Arquivos
 Os arquivos estão disponíveis em formato executável. No entanto, para garantir compatibilidade com diferentes sistemas operacionais, incluímos um makefile. Para compilar os arquivos, basta executar o comando `make -B` no terminal.
 
-O arquivo de 'upload' é projetado para processar dados de um arquivo CSV. Para os arquivos 'findrec' e 'seek1', a entrada deve ser um número inteiro. Já para o arquivo 'seek2', as entradas devem ser inseridas entre aspas.
+Caso os arquivos executáveis enviados não executem por algum motivo (provavelmente pelo sistema), basta compilar novamente.
 
-Para simplificar a execução dos códigos mencionados, desenvolvemos o script `run.sh`. Este script automatiza a execução de todos os programas, interagindo com o usuário através do terminal para solicitar os dados de entrada necessários, conforme descrito anteriormente.
+O arquivo de 'upload' é projetado para processar dados de um arquivo CSV. Para os arquivos 'findrec' e 'seek1', a entrada deve ser um número inteiro. Já para o arquivo 'seek2', as entradas devem ser inseridas entre aspas. 
 
 ## Documentação e Decisões de Projeto
 Detalhes sobre as decisões de projeto, explicações mais aprofundadas sobre as funções desenvolvidas, organização dos arquivos e a distribuição de tarefas estão disponíveis na documentação anexa ao repositório.

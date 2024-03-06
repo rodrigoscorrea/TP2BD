@@ -12,7 +12,7 @@
 
 // Registro que será usado na árvore
 struct RegistroBPT
-{ // VERIFICAR DEPOIS SE DÁ PRA FAZER SETANDO AO INVÉS DOS DOIS PARA DIFERENCIAR MAIS AINDA
+{ 
     int chave;
     size_t valor;
     RegistroBPT(int chave, size_t valor) : chave(chave), valor(valor) {}
@@ -68,15 +68,15 @@ public:
 
     No<RegistroBPT>* get_raiz(){ return this->raiz; }
 
-    No<RegistroBPT>* busca_arvore(No<RegistroBPT>* node, int chave_busca)
-    { // Raiz deve ser passada como parâmetro para node
-        if (node == nullptr)
+    No<RegistroBPT>* busca_arvore(No<RegistroBPT>* no, int chave_busca)
+    { // Raiz deve ser passada como parâmetro para no
+        if (no == nullptr)
         { // Caso raiz nula
             return nullptr;
         }
         else
         {
-            No<RegistroBPT>* cursor = node; 
+            No<RegistroBPT>* cursor = no; 
 
             while (cursor->folha == false)
             { 
@@ -108,15 +108,15 @@ public:
         }
     }
 
-    No<RegistroBPT>* busca_arvore_alcance(No<RegistroBPT>* node, RegistroBPT chave_busca)
-    { // Também usa raiz como parâmetro para node
-        if (node == nullptr)
+    No<RegistroBPT>* posicionar_cursor_arvore(No<RegistroBPT>* no, RegistroBPT chave_busca)
+    { // Também usa raiz como parâmetro para no
+        if (no == nullptr)
         { // Caso raiz nula
             return nullptr;
         }
         else
         {
-            No<RegistroBPT>* cursor = node; 
+            No<RegistroBPT>* cursor = no; 
 
             while (cursor->folha == false)
             { 
@@ -186,7 +186,7 @@ public:
 
     No<RegistroBPT>** inserir_filho(No<RegistroBPT>** filhos, No<RegistroBPT>*filho,int tamanho,int index)
     {
-        for (int i= tamanho; i > index; i--)
+        for (int i= tamanho; i > index; i--) //deslocar filhos para realizar inserção
         {
             filhos[i] = filhos[i-1];
         }
@@ -290,7 +290,7 @@ public:
 
             // Balanceamento - ancestral
             if (cursor->ancestral == nullptr)
-            { // Caso seja raiz, não há n
+            { // Caso seja raiz, não há ancestral
                 auto* novo_ancestral = new No<RegistroBPT>(this->grau);
                 cursor->ancestral = novo_ancestral;
                 novo_no->ancestral = novo_ancestral;
@@ -325,7 +325,7 @@ public:
             No<RegistroBPT>* cursor = this->raiz;
 
             // Ir até as folhas
-            cursor = busca_arvore_alcance(cursor, registro_aux);
+            cursor = posicionar_cursor_arvore(cursor, registro_aux);
 
             if (cursor->ocupacao < (this->grau-1))
             { // Caso não haja overflow
@@ -400,7 +400,7 @@ public:
         }
     }
 
-    void deletar(No<RegistroBPT>* cursor)
+    void deletar(No<RegistroBPT>* cursor) //deletar árvore b+ recursivamente
     {
         if (cursor != nullptr)
         {
@@ -420,11 +420,11 @@ public:
         }
     }
 
-    void imprimir_arvore() {
+    void imprimir_arvore() { 
         imprimir_no(this->raiz, 0, "");
     }
 
-    void imprime_registro(const RegistroBPT& registro, const std::string& prefixo) {
+    void imprimir_registro_arvore(const RegistroBPT& registro, const std::string& prefixo) {
         std::cout << prefixo << "Chave: " << registro.chave << " Valor: " << registro.valor << std::endl;
     }
 
@@ -438,7 +438,7 @@ public:
         std::string child_prefixo = novo_prefixo + "|--";
 
         for (int i = 0; i < cursor->ocupacao; ++i) {
-            imprime_registro(cursor->registros[i], novo_prefixo);
+            imprimir_registro_arvore(cursor->registros[i], novo_prefixo);
             if (!cursor->folha) {
                 imprimir_no(cursor->filhos[i], nivel + 1, child_prefixo);
             }
@@ -456,7 +456,7 @@ public:
         size_t tamanho;
         if (!arquivo.read(reinterpret_cast<char*>(&folha), sizeof(folha)) || !arquivo.read(reinterpret_cast<char*>(&tamanho), sizeof(tamanho)))
         {
-            cerr << "Error reading node information from arquivo." << endl;
+            cerr << "Erro ao ler a informaçao do no do arquivo" << endl;
             return nullptr;
         }
 
@@ -516,7 +516,7 @@ public:
         ifstream arquivo(nome_arquivo, ios::binary | ios::in);
         if (!arquivo)
         {
-            cerr << "Erro abrindo arquivo para desserilização: " << nome_arquivo << endl;
+            cerr << "Erro abrindo arquivo para desserilizaçao: " << nome_arquivo << endl;
             return BPlusTree(0);  // Retornar uma árvore B+ vazia
         }
 
@@ -631,7 +631,7 @@ public:
     void serializar_arvore(const BPlusTree& arvore, const string& nome_arquivo) {
         ofstream arquivo(nome_arquivo, ios::binary | ios::out);
         if (!arquivo) {
-            cerr << "Error opening arquivo for serialization: " << nome_arquivo << endl;
+            cerr << "Erro ao abrir arquivo para serialização " << nome_arquivo << endl;
             return;
         }
 
