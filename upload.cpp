@@ -84,7 +84,7 @@ void ler_arquivo_csv(const string& nome_arquivo, HashTable& hash, BPlusTree& arv
 
 int main(int argc, char const *argv[])
 {   
-    const string nome_arquivo = "artigo.csv";//argv[1];
+    const string nome_arquivo = argv[1];
 
     cout << "Inicializando arquivo Hash." << endl;
     HashTable hash_table = HashTable(ARQUIVO_HASHTABLE);
