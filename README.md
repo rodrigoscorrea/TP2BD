@@ -2,9 +2,9 @@
 Este repositório contém os materiais para o segundo trabalho prático da disciplina de Banco de Dados 1. O principal objetivo deste projeto é gerenciar operações na memória secundária.
 
 ## Equipe
-- **Lucas Afonso Pereira Chagas**
-- **Maria Vitória Costa do Nascimento**
-- **Rodrigo Santos Côrrea**
+- **Lucas Afonso Pereira Chagas** : 22050316
+- **Maria Vitória Costa do Nascimento** : 22053592
+- **Rodrigo Santos Correa** : 22251139
 
 ## Execução dos Arquivos
 Os arquivos estão disponíveis em formato executável. No entanto, para garantir compatibilidade com diferentes sistemas operacionais, incluímos um makefile. Para compilar os arquivos, basta executar o comando `make -B` no terminal.
